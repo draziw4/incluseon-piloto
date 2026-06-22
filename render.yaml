@@ -1,0 +1,174 @@
+services:
+  - type: web
+    name: incluseon-pilot
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./frontend/Dockerfile.render
+    healthCheckPath: /
+    autoDeployTrigger: checksPass
+
+  - type: pserv
+    name: incluseon-pilot-api
+    runtime: docker
+    plan: starter
+    region: virginia
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
+    preDeployCommand: python script/ensure_storage.py && alembic upgrade head
+    healthCheckPath: /ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: incluseon-pilot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: incluseon-pilot-cache
+          type: keyvalue
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: S3_BUCKET
+        value: reports
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ENDPOINT_URL
+        value: http://incluseon-pilot-minio:9000
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          name: incluseon-pilot-minio
+          type: pserv
+          envVarKey: MINIO_ROOT_USER
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          name: incluseon-pilot-minio
+          type: pserv
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: CORS_ORIGINS
+        value: https://incluseon-pilot.onrender.com
+      - key: ALLOWED_HOSTS
+        value: incluseon-pilot.onrender.com
+      - key: FRONTEND_URL
+        value: https://incluseon-pilot.onrender.com
+      - key: COOKIE_SECURE
+        value: true
+      - key: DEBUG
+        value: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+
+  - type: worker
+    name: incluseon-pilot-worker
+    runtime: docker
+    plan: starter
+    region: virginia
+    dockerfilePath: ./backend/Dockerfile
+    dockerCommand: celery -A workers.celery_app.celery worker --loglevel=INFO --concurrency=2
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: incluseon-pilot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: incluseon-pilot-cache
+          type: keyvalue
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          name: incluseon-pilot-api
+          type: pserv
+          envVarKey: SECRET_KEY
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: S3_BUCKET
+        value: reports
+      - key: S3_REGION
+        value: us-east-1
+      - key: S3_ENDPOINT_URL
+        value: http://incluseon-pilot-minio:9000
+      - key: AWS_ACCESS_KEY_ID
+        fromService:
+          name: incluseon-pilot-minio
+          type: pserv
+          envVarKey: MINIO_ROOT_USER
+      - key: AWS_SECRET_ACCESS_KEY
+        fromService:
+          name: incluseon-pilot-minio
+          type: pserv
+          envVarKey: MINIO_ROOT_PASSWORD
+      - key: CORS_ORIGINS
+        value: https://incluseon-pilot.onrender.com
+      - key: ALLOWED_HOSTS
+        value: incluseon-pilot.onrender.com
+      - key: FRONTEND_URL
+        value: https://incluseon-pilot.onrender.com
+      - key: COOKIE_SECURE
+        value: true
+      - key: DEBUG
+        value: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+
+  - type: pserv
+    name: incluseon-pilot-minio
+    runtime: docker
+    plan: starter
+    region: virginia
+    dockerfilePath: ./infra/render/minio/Dockerfile
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: MINIO_ROOT_USER
+        generateValue: true
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+    disk:
+      name: incluseon-pilot-reports
+      mountPath: /data
+      sizeGB: 10
+
+  - type: keyvalue
+    name: incluseon-pilot-cache
+    plan: starter
+    region: virginia
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+databases:
+  - name: incluseon-pilot-db
+    plan: basic-256mb
+    region: virginia
+    databaseName: incluseon
+    user: incluseon
+    postgresMajorVersion: "16"
+    ipAllowList: []
