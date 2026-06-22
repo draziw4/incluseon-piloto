@@ -16,7 +16,6 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
     preDeployCommand: python script/ensure_storage.py && alembic upgrade head
-    healthCheckPath: /ready
     autoDeployTrigger: checksPass
     envVars:
       - key: ENVIRONMENT
