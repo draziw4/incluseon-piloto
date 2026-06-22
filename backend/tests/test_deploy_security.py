@@ -32,6 +32,22 @@ class DeploySecurityTests(unittest.TestCase):
                 ses_from_email="noreply@example.com",
             )
 
+    def test_render_database_url_and_smtp_are_accepted(self):
+        settings = Settings(
+            database_url="postgresql://user:pass@db/app",
+            secret_key="a-secure-secret-with-more-than-32-characters",
+            openai_api_key="test-key",
+            environment="production",
+            cors_origins="https://incluseon-pilot.onrender.com",
+            allowed_hosts="incluseon-pilot.onrender.com",
+            cookie_secure=True,
+            smtp_host="smtp.example.com",
+            smtp_username="user",
+            smtp_password="password",
+            smtp_from_email="noreply@example.com",
+        )
+        self.assertTrue(settings.database_url.startswith("postgresql+asyncpg://"))
+
     def test_user_creation_is_not_public(self):
         operation = app.openapi()["paths"]["/users"]["post"]
         self.assertTrue(operation.get("security"))

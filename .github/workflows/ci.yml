@@ -80,6 +80,8 @@ jobs:
       - run: docker compose config --quiet
       - run: docker build -f backend/Dockerfile -t incluseon-backend:test .
       - run: docker build -f frontend/Dockerfile -t incluseon-frontend:test .
+      - run: docker build -f frontend/Dockerfile.render -t incluseon-render-frontend:test .
+      - run: docker build -f infra/render/minio/Dockerfile -t incluseon-render-minio:test .
 
   infrastructure:
     runs-on: ubuntu-latest

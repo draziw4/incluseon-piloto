@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     s3_endpoint_url: str | None = None
     frontend_url: str = "http://localhost:5173"
     ses_from_email: str | None = None
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_from_email: str | None = None
     debug: bool = False
     cookie_secure: bool = False
     cookie_domain: str | None = None
@@ -64,6 +69,10 @@ class Settings(BaseSettings):
                 f"postgresql+asyncpg://{self.db_user}:{password}"
                 f"@{self.db_host}:{self.db_port}/{self.db_name}"
             )
+        elif self.database_url.startswith("postgresql://"):
+            self.database_url = self.database_url.replace(
+                "postgresql://", "postgresql+asyncpg://", 1
+            )
         if not self.is_production:
             return self
 
@@ -82,8 +91,17 @@ class Settings(BaseSettings):
             raise ValueError("S3_BUCKET é obrigatório quando STORAGE_BACKEND=s3")
         if self.storage_backend not in {"local", "s3"}:
             raise ValueError("STORAGE_BACKEND deve ser local ou s3")
-        if not self.ses_from_email:
-            raise ValueError("SES_FROM_EMAIL é obrigatório em produção")
+        smtp_values = (
+            self.smtp_host,
+            self.smtp_username,
+            self.smtp_password,
+            self.smtp_from_email,
+        )
+        if not self.ses_from_email and not all(smtp_values):
+            raise ValueError(
+                "Configure SES_FROM_EMAIL ou SMTP_HOST/SMTP_USERNAME/"
+                "SMTP_PASSWORD/SMTP_FROM_EMAIL em produção"
+            )
         return self
 
 
