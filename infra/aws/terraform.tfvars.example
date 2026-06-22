@@ -1,0 +1,9 @@
+domain_name     = "app.incluseon.com.br"
+api_domain_name = "api.incluseon.com.br"
+hosted_zone_id  = "Z00000000000000000000"
+ses_from_email  = "noreply@incluseon.com.br"
+alert_email     = "infra@incluseon.com.br"
+monthly_budget_usd = 150
+app_secret_arn  = "arn:aws:secretsmanager:sa-east-1:123456789012:secret:incluseon-production-app"
+github_repository          = "IncluseON/incluseon-hackaton-mvp"
+github_oidc_provider_arn   = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

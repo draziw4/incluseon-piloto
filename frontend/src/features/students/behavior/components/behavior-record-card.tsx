@@ -1,12 +1,14 @@
-import { Activity, Clock, MapPin } from "lucide-react"
+import { Activity, Clock, MapPin, Pencil, Trash2 } from "lucide-react"
 
 import type { BehaviorRecord } from "../types/behavior-record"
 
 type Props = {
   record: BehaviorRecord
+  onEdit: () => void
+  onDelete: () => void
 }
 
-export function BehaviorRecordCard({ record }: Props) {
+export function BehaviorRecordCard({ record, onEdit, onDelete }: Props) {
   return (
     <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -24,11 +26,15 @@ export function BehaviorRecordCard({ record }: Props) {
           </h3>
         </div>
 
+        <div className="flex items-center gap-2">
         {record.intensity && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
             Intensidade {record.intensity}/10
           </span>
         )}
+          <button type="button" onClick={onEdit} aria-label="Editar registro" className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>
+          <button type="button" onClick={onDelete} aria-label="Excluir registro" className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

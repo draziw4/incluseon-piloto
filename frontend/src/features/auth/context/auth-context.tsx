@@ -9,11 +9,9 @@ type AuthContextType = {
 
   loading: boolean
 
-  login: (
-    token: string
-  ) => void
+  login: () => Promise<void>
 
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 export const AuthContext =

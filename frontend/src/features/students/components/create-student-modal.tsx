@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,14 +10,21 @@ import {
 } from "../schemas/create-student-schema"
 
 import { useCreateStudent } from "../hooks/use-create-student"
+import { useUpdateStudent } from "../hooks/use-update-student"
+import type { Student } from "../types/student"
+import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
 
 type Props = {
   open: boolean
   onClose: () => void
+  student?: Student | null
 }
 
-export function CreateStudentModal({ open, onClose }: Props) {
-  const mutation = useCreateStudent()
+export function StudentFormModal({ open, onClose, student }: Props) {
+  const createMutation = useCreateStudent()
+  const updateMutation = useUpdateStudent()
+  const [actionError, setActionError] = useState<string | null>(null)
+  const isEditing = Boolean(student)
 
 const {
   register,
@@ -24,15 +32,42 @@ const {
   reset,
   formState: { errors }
 } = useForm<CreateStudentFormData, unknown, CreateStudentData>({
-  resolver: zodResolver(createStudentSchema)
+  resolver: zodResolver(createStudentSchema),
+  defaultValues: getStudentFormValues(student)
 })
 
-async function onSubmit(data: CreateStudentData) {
-  await mutation.mutateAsync(data)
+useEffect(() => {
+  if (open) {
+    reset(getStudentFormValues(student))
+  }
+}, [open, reset, student])
 
-  reset()
+function handleClose() {
+  setActionError(null)
   onClose()
 }
+
+async function onSubmit(data: CreateStudentData) {
+  try {
+    setActionError(null)
+
+    if (student) {
+      await updateMutation.mutateAsync({
+        studentId: student.id,
+        data
+      })
+    } else {
+      await createMutation.mutateAsync(data)
+    }
+
+    reset()
+    handleClose()
+  } catch (error) {
+    setActionError(getApiErrorMessage(error))
+  }
+}
+
+  const isPending = createMutation.isPending || updateMutation.isPending
 
   if (!open) return null
 
@@ -42,17 +77,19 @@ async function onSubmit(data: CreateStudentData) {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
-              Cadastrar novo aluno
+              {isEditing ? "Editar aluno" : "Cadastrar novo aluno"}
             </h2>
 
             <p className="text-sm text-zinc-500">
-              Preencha os dados iniciais do acompanhamento.
+              {isEditing
+                ? "Atualize os dados cadastrais e de acompanhamento."
+                : "Preencha os dados iniciais do acompanhamento."}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100"
           >
             Fechar
@@ -63,6 +100,11 @@ async function onSubmit(data: CreateStudentData) {
           onSubmit={handleSubmit(onSubmit)}
           className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
+          {actionError && (
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700 md:col-span-2">
+              {actionError}
+            </div>
+          )}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Nome do aluno
@@ -205,7 +247,7 @@ async function onSubmit(data: CreateStudentData) {
           <div className="mt-2 flex justify-end gap-3 md:col-span-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
             >
               Cancelar
@@ -213,14 +255,33 @@ async function onSubmit(data: CreateStudentData) {
 
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={isPending}
               className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {mutation.isPending ? "Salvando..." : "Cadastrar aluno"}
+              {isPending
+                ? "Salvando..."
+                : isEditing
+                  ? "Salvar alterações"
+                  : "Cadastrar aluno"}
             </button>
           </div>
         </form>
       </div>
     </div>
   )
+}
+
+function getStudentFormValues(student?: Student | null): CreateStudentFormData {
+  return {
+    name: student?.name ?? "",
+    age: student?.age ?? "",
+    birth_date: student?.birth_date ?? "",
+    diagnosis: student?.diagnosis ?? "",
+    school_name: student?.school_name ?? "",
+    guardian_name: student?.guardian_name ?? "",
+    guardian_phone: student?.guardian_phone ?? "",
+    communication_notes: student?.communication_notes ?? "",
+    sensory_notes: student?.sensory_notes ?? "",
+    general_observations: student?.general_observations ?? ""
+  }
 }

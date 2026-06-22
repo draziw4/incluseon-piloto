@@ -4,6 +4,7 @@ from fastapi import (
     HTTPException,
     status
 )
+from fastapi.responses import Response
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,15 +17,20 @@ from dependencies import get_current_user
 
 from models.models import (
     User,
-    UserRole,
-    AIReport
+    AIReport,
+    AIReportRevision
 )
 
-from schemas.ai_report import AIReportResponse
+from schemas.ai_report import AIReportResponse, AIReportUpdate
 
 from services.permissions_service import (
-    require_student_access,
-    get_student_professional_link
+    require_student_permission,
+    require_student_report_access
+)
+from services.pdf.pdf_generator import (
+    delete_generated_report,
+    generate_case_study_pdf,
+    read_generated_report
 )
 
 
@@ -51,36 +57,11 @@ async def list_student_ai_reports(
         Depends(get_current_user)
     ]
 ):
-    student = await require_student_access(
+    student = await require_student_report_access(
         db=db,
         user=current_user,
         student_id=student_id
     )
-
-    if (
-        current_user.role != UserRole.ADMIN
-        and student.psychologist_id != current_user.id
-    ):
-        link = await get_student_professional_link(
-            db=db,
-            user_id=current_user.id,
-            student_id=student.id
-        )
-
-        if not link:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não está vinculado a este aluno."
-            )
-
-        if not (
-            link.can_view_reports
-            or link.can_generate_ai_report
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Você não tem permissão para visualizar relatórios deste aluno."
-            )
 
     result = await db.execute(
         select(AIReport)
@@ -95,3 +76,118 @@ async def list_student_ai_reports(
     reports = result.scalars().all()
 
     return reports
+
+
+@router.patch(
+    "/{report_id}",
+    response_model=AIReportResponse
+)
+async def update_ai_report(
+    report_id: int,
+    data: AIReportUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    report = await get_ai_report_or_404(db, report_id)
+
+    if report.revision != data.expected_revision:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este relatório foi alterado por outro profissional. Atualize a página antes de editar novamente."
+        )
+
+    student = await require_student_permission(
+        db=db,
+        user=current_user,
+        student_id=report.student_id,
+        permission="can_generate_ai_report"
+    )
+
+    previous_pdf_path = report.pdf_path
+    next_revision = report.revision + 1
+    new_pdf_path = generate_case_study_pdf(
+        student_name=student.name,
+        report_content=data.content,
+        task_id=f"report-{report.id}-v{next_revision}"
+    )
+
+    revision = AIReportRevision(
+        report_id=report.id,
+        edited_by_id=current_user.id,
+        revision=report.revision,
+        content=report.content
+    )
+    db.add(revision)
+
+    report.content = data.content
+    report.pdf_path = new_pdf_path
+    report.revision = next_revision
+    report.last_edited_by_id = current_user.id
+
+    try:
+        await db.commit()
+        await db.refresh(report)
+    except Exception:
+        await db.rollback()
+        delete_generated_report(new_pdf_path)
+        raise
+
+    if previous_pdf_path and previous_pdf_path != new_pdf_path:
+        delete_generated_report(previous_pdf_path)
+
+    return report
+
+
+@router.get("/{report_id}/download")
+async def download_ai_report(
+    report_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    report = await get_ai_report_or_404(db, report_id)
+
+    await require_student_report_access(
+        db=db,
+        user=current_user,
+        student_id=report.student_id
+    )
+
+    if not report.pdf_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="PDF não disponível"
+        )
+
+    pdf_content = read_generated_report(report.pdf_path)
+
+    if pdf_content is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arquivo PDF não encontrado"
+        )
+
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="estudo-de-caso-{report.student_id}-{report.id}.pdf"'
+            ),
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
+async def get_ai_report_or_404(
+    db: AsyncSession,
+    report_id: int
+) -> AIReport:
+    report = await db.get(AIReport, report_id)
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Relatório não encontrado"
+        )
+
+    return report

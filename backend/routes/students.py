@@ -25,7 +25,8 @@ from models.models import (
     Student,
     StudentProfessional,
     UserRole,
-    StudentProfessionalRole
+    StudentProfessionalRole,
+    AIReport
 )
 
 from schemas.student import (
@@ -40,6 +41,7 @@ from services.permissions_service import (
     require_student_access,
     get_student_or_404
 )
+from services.pdf.pdf_generator import delete_generated_report
 
 
 router = APIRouter(
@@ -284,8 +286,20 @@ async def delete_student(
             detail="Sem permissão para deletar este aluno"
         )
 
+    reports_result = await db.execute(
+        select(AIReport.pdf_path).where(
+            AIReport.student_id == student.id,
+            AIReport.pdf_path.is_not(None)
+        )
+    )
+    report_paths = reports_result.scalars().all()
+
     await db.delete(student)
     await db.commit()
+
+    for report_path in report_paths:
+        if report_path:
+            delete_generated_report(report_path)
 
     return {
         "message": "Estudante deletado com sucesso"

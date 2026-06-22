@@ -5,10 +5,14 @@ import {
   FileText,
   Calendar,
   Sparkles,
-  BarChart3
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { useStudents } from "@/features/students/hooks/use-students"
+import { useDashboardSummary } from "@/features/dashboard/hooks/use-dashboard-summary"
+import type { DashboardReminder } from "@/features/dashboard/types/dashboard-summary"
 
 export function DashboardPage() {
   const {
@@ -18,9 +22,15 @@ export function DashboardPage() {
     page: 1,
     per_page: 5
   })
+  const {
+    data: dashboardSummary,
+    isLoading: isLoadingDashboard,
+    isError: isDashboardError
+  } = useDashboardSummary()
 
   const totalStudents = studentsData?.total ?? 0
   const recentStudents = studentsData?.items ?? []
+  const metrics = dashboardSummary?.metrics
 
   return (
     <div className="space-y-6">
@@ -41,9 +51,9 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <Link to="/case-studies" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
           Gerar estudo de caso IA
-        </button>
+        </Link>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -56,21 +66,21 @@ export function DashboardPage() {
 
         <DashboardCard
           title="Registros ABA"
-          value="0"
-          subtitle="registros comportamentais"
+          value={isLoadingDashboard ? "..." : String(metrics?.behavior_records_last_7_days ?? 0)}
+          subtitle="nos últimos 7 dias"
           icon={<Activity size={22} />}
         />
 
         <DashboardCard
           title="Avaliações"
-          value="0"
+          value={isLoadingDashboard ? "..." : String(metrics?.assessments_count ?? 0)}
           subtitle="instrumentos preenchidos"
           icon={<Brain size={22} />}
         />
 
         <DashboardCard
           title="Relatórios IA"
-          value="0"
+          value={isLoadingDashboard ? "..." : String(metrics?.ai_reports_count ?? 0)}
           subtitle="estudos de caso gerados"
           icon={<FileText size={22} />}
         />
@@ -80,36 +90,35 @@ export function DashboardPage() {
         <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm xl:col-span-2">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-bold text-blue-950">
-              Sugestões inteligentes
+              Pendências profissionais
             </h2>
 
-            <button className="text-sm font-medium text-blue-600">
-              Ver todas →
-            </button>
+            <span className="text-sm font-medium text-blue-600">
+              {dashboardSummary?.reminders.length ?? 0} item(ns)
+            </span>
           </div>
 
-          <div className="space-y-4">
-            <SuggestionItem
-              icon={<Brain size={20} />}
-              title="Preencher avaliação inicial"
-              description="Comece criando o perfil cognitivo e comportamental do aluno."
-              action="Criar"
-            />
-
-            <SuggestionItem
-              icon={<Activity size={20} />}
-              title="Registrar ocorrência ABA"
-              description="Registre antecedentes, comportamento, consequência e manejo."
-              action="Registrar"
-            />
-
-            <SuggestionItem
-              icon={<BarChart3 size={20} />}
-              title="Analisar padrões"
-              description="Veja intensidade, frequência e contextos mais recorrentes."
-              action="Ver analytics"
-            />
-          </div>
+          {isLoadingDashboard ? (
+            <p className="text-sm text-zinc-500">Carregando pendências...</p>
+          ) : isDashboardError ? (
+            <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+              Não foi possível carregar o resumo profissional.
+            </div>
+          ) : dashboardSummary && dashboardSummary.reminders.length > 0 ? (
+            <div className="space-y-4">
+              {dashboardSummary.reminders.map((reminder, index) => (
+                <ReminderItem key={`${reminder.type}-${index}`} reminder={reminder} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl bg-blue-50/60 p-6 text-center">
+              <CheckCircle2 size={28} className="text-emerald-600" />
+              <h3 className="mt-3 font-bold text-blue-950">Tudo em dia</h3>
+              <p className="mt-1 max-w-md text-sm text-zinc-500">
+                Não encontramos pendências urgentes para seus alunos acompanhados.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
@@ -123,6 +132,7 @@ export function DashboardPage() {
               title="Novo aluno"
               subtitle="Cadastrar"
               color="bg-blue-50 text-blue-700"
+              to="/students"
             />
 
             <QuickAction
@@ -130,6 +140,7 @@ export function DashboardPage() {
               title="Registro ABA"
               subtitle="Ocorrência"
               color="bg-emerald-50 text-emerald-700"
+              to="/behavior-records"
             />
 
             <QuickAction
@@ -137,6 +148,7 @@ export function DashboardPage() {
               title="Avaliação"
               subtitle="Instrumento"
               color="bg-purple-50 text-purple-700"
+              to="/assessments"
             />
 
             <QuickAction
@@ -144,9 +156,26 @@ export function DashboardPage() {
               title="Agenda"
               subtitle="Atendimento"
               color="bg-orange-50 text-orange-700"
+              to="/appointments"
             />
           </div>
         </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DashboardCard
+          title="Atendimentos hoje"
+          value={isLoadingDashboard ? "..." : String(metrics?.appointments_today ?? 0)}
+          subtitle="agendados ou pendentes"
+          icon={<Calendar size={22} />}
+        />
+
+        <DashboardCard
+          title="Próximos 7 dias"
+          value={isLoadingDashboard ? "..." : String(metrics?.upcoming_appointments ?? 0)}
+          subtitle="atendimentos futuros"
+          icon={<AlertCircle size={22} />}
+        />
       </section>
 
       <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
@@ -155,12 +184,12 @@ export function DashboardPage() {
             Meus alunos
           </h2>
 
-          <a
-            href="/students"
+          <Link
+            to="/students"
             className="text-sm font-medium text-blue-600"
           >
             Ver todos →
-          </a>
+          </Link>
         </div>
 
         {isLoadingStudents ? (
@@ -170,9 +199,9 @@ export function DashboardPage() {
         ) : recentStudents.length > 0 ? (
           <div className="space-y-3">
             {recentStudents.map((student) => (
-              <a
+              <Link
                 key={student.id}
-                href={`/students/${student.id}`}
+                to={`/students/${student.id}`}
                 className="flex items-center justify-between rounded-xl border border-blue-100 p-4 transition hover:border-blue-300 hover:bg-blue-50"
               >
                 <div>
@@ -189,7 +218,7 @@ export function DashboardPage() {
                 <span className="text-sm font-medium text-blue-600">
                   Abrir →
                 </span>
-              </a>
+              </Link>
             ))}
           </div>
         ) : (
@@ -202,12 +231,12 @@ export function DashboardPage() {
               Nenhum aluno cadastrado ainda.
             </p>
 
-            <a
-              href="/students"
+            <Link
+              to="/students"
               className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               + Cadastrar primeiro aluno
-            </a>
+            </Link>
           </div>
         )}
       </section>
@@ -249,38 +278,38 @@ function DashboardCard({
   )
 }
 
-function SuggestionItem({
-  icon,
-  title,
-  description,
-  action
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-  action: string
-}) {
+function ReminderItem({ reminder }: { reminder: DashboardReminder }) {
+  const priorityClass = reminder.priority === "high"
+    ? "bg-red-50 text-red-700"
+    : "bg-blue-50 text-blue-700"
+
   return (
     <div className="flex items-center justify-between rounded-xl border border-zinc-100 p-4">
       <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          {icon}
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${priorityClass}`}>
+          <AlertCircle size={20} />
         </div>
 
         <div>
           <h3 className="font-semibold text-blue-950">
-            {title}
+            {reminder.title}
           </h3>
 
           <p className="text-sm text-zinc-500">
-            {description}
+            {reminder.description}
           </p>
+
+          {reminder.due_at && (
+            <p className="mt-1 text-xs text-zinc-400">
+              {new Date(reminder.due_at).toLocaleString("pt-BR")}
+            </p>
+          )}
         </div>
       </div>
 
-      <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-        {action}
-      </button>
+      <Link to={reminder.to} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        Abrir
+      </Link>
     </div>
   )
 }
@@ -289,15 +318,17 @@ function QuickAction({
   icon,
   title,
   subtitle,
-  color
+  color,
+  to
 }: {
   icon: React.ReactNode
   title: string
   subtitle: string
   color: string
+  to: string
 }) {
   return (
-    <button className={`rounded-2xl p-4 text-left ${color}`}>
+    <Link to={to} className={`rounded-2xl p-4 text-left ${color}`}>
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/70">
         {icon}
       </div>
@@ -309,6 +340,6 @@ function QuickAction({
       <p className="text-sm opacity-80">
         {subtitle}
       </p>
-    </button>
+    </Link>
   )
 }

@@ -1,45 +1,31 @@
-import {
+import { Navigate } from "react-router-dom";
 
-  Navigate
+import { useAuth } from "../features/auth/hooks/use-auth";
 
-} from "react-router-dom"
-
-import { useAuth }
-from "../features/auth/hooks/use-auth"
-
-import type {
-  ReactNode
-} from "react"
+import type { ReactNode } from "react";
 
 type Props = {
-  children: ReactNode
-}
+  children: ReactNode;
+};
 
-export function ProtectedRoute({
-  children
-}: Props) {
-
+export function ProtectedRoute({ children }: Props) {
   const {
-
     user,
 
-    loading
-
-  } = useAuth()
+    loading,
+  } = useAuth();
 
   if (loading) {
-
-    return <p>Loading...</p>
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-blue-50 text-sm font-medium text-blue-700">
+        Carregando sua sessão...
+      </div>
+    );
   }
 
   if (!user) {
-
-    return (
-      <Navigate
-        to="/login"
-      />
-    )
+    return <Navigate to="/login" replace />;
   }
 
-  return children
+  return children;
 }

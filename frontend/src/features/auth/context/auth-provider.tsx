@@ -1,120 +1,51 @@
-import {
+import { useCallback, useEffect, useState, type ReactNode } from "react"
 
-  useEffect,
+import { api } from "../../../api/client"
+import type { User } from "../types/user"
+import { AuthContext } from "./auth-context"
 
-  useState,
+type Props = { children: ReactNode }
 
-  type ReactNode
+export function AuthProvider({ children }: Props) {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-} from "react"
-
-import { api }
-from "../../../api/client"
-
-import type { User }
-from "../types/user"
-
-import { AuthContext }
-from "./auth-context"
-
-
-type Props = {
-  children: ReactNode
-}
-
-export function AuthProvider({
-  children
-}: Props) {
-
-  const [user, setUser] =
-    useState<User | null>(null)
-
-  const [loading, setLoading] =
-    useState(true)
-
-
-  async function loadUser() {
-
-    const token =
-      localStorage.getItem(
-        "access_token"
-      )
-
-    if (!token) {
-
-      setLoading(false)
-
-      return
-    }
-
-    try {
-
-      const response =
-        await api.get("/users/me")
-
-      setUser(response.data)
-
-    } catch {
-
-      localStorage.removeItem(
-        "access_token"
-      )
-    }
-
-    setLoading(false)
-  }
-
-  function login(
-    token: string
-  ) {
-
-    localStorage.setItem(
-      "access_token",
-      token
-    )
-
-    loadUser()
-  }
-
-    function logout() {
-
-    localStorage.removeItem(
-      "access_token"
-    )
-
+  const clearSession = useCallback(() => {
     setUser(null)
-  }
+  }, [])
 
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/auth/logout")
+    } finally {
+      clearSession()
+    }
+  }, [clearSession])
 
-useEffect(() => {
+  const loadUser = useCallback(async () => {
+    try {
+      const response = await api.get<User>("/users/me")
+      setUser(response.data)
+    } catch {
+      clearSession()
+    } finally {
+      setLoading(false)
+    }
+  }, [clearSession])
 
-  async function initialize() {
-
+  async function login() {
     await loadUser()
   }
 
-  initialize()
+  useEffect(() => {
+    queueMicrotask(() => void loadUser())
+    window.addEventListener("auth:expired", clearSession)
+    return () => window.removeEventListener("auth:expired", clearSession)
+  }, [loadUser, clearSession])
 
-}, [])
-
-
-    return (
-
-    <AuthContext.Provider
-      value={{
-
-        user,
-
-        loading,
-
-        login,
-
-        logout
-      }}
-    >
-
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
-
     </AuthContext.Provider>
   )
 }

@@ -3,7 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle } from "lucide-react";
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import type { Assessment } from "../types/assessment";
 import {
   createAssessmentSchema,
   type CreateAssessmentData,
@@ -16,10 +19,20 @@ type Props = {
   studentId: string;
   open: boolean;
   onClose: () => void;
+  assessment?: Assessment | null;
 };
 
-export function CreateAssessmentModal({ studentId, open, onClose }: Props) {
+export function CreateAssessmentModal({ studentId, open, onClose, assessment }: Props) {
   const mutation = useCreateAssessment(studentId);
+  const queryClient = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateAssessmentData) => api.patch(`/assessments/student/${studentId}/${assessment?.id}`, {
+      title: data.title,
+      assessment_type: data.assessment_type,
+      assessment_data: Object.fromEntries(Object.entries(data).filter(([key]) => !["title", "assessment_type"].includes(key)))
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["assessments", studentId] })
+  });
   const [actionError, setActionError] = useState<string | null>(null);
 
   const {
@@ -31,14 +44,17 @@ export function CreateAssessmentModal({ studentId, open, onClose }: Props) {
     resolver: zodResolver(createAssessmentSchema),
   });
 
+  useEffect(() => {
+    if (open && assessment) reset({ title: assessment.title, assessment_type: assessment.assessment_type, ...assessment.assessment_data });
+    if (open && !assessment) reset({});
+  }, [open, assessment, reset]);
+
   async function onSubmit(data: CreateAssessmentData) {
     try {
       setActionError(null);
 
-      await mutation.mutateAsync({
-        studentId,
-        data,
-      });
+      if (assessment) await updateMutation.mutateAsync(data);
+      else await mutation.mutateAsync({ studentId, data });
 
       reset();
       onClose();
@@ -54,7 +70,7 @@ export function CreateAssessmentModal({ studentId, open, onClose }: Props) {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
-              Nova avaliação / entrevista
+              {assessment ? "Editar avaliação / entrevista" : "Nova avaliação / entrevista"}
             </h2>
 
             <p className="text-sm text-zinc-500">
@@ -209,10 +225,10 @@ export function CreateAssessmentModal({ studentId, open, onClose }: Props) {
 
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || updateMutation.isPending}
               className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {mutation.isPending ? "Salvando..." : "Salvar avaliação"}
+              {mutation.isPending || updateMutation.isPending ? "Salvando..." : "Salvar avaliação"}
             </button>
           </div>
         </form>

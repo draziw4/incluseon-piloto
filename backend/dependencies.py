@@ -1,16 +1,20 @@
-from fastapi import Depends,HTTPException,status
+from fastapi import Cookie, Depends,HTTPException,Request,status
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from security import decode_token,oauth2_scheme
+from config import settings
+from security import decode_token, oauth2_scheme
 from models.models import User,Student
 from typing import Annotated
 
 
 async def get_current_user(
-        token:Annotated[str ,Depends(oauth2_scheme)],
-        db:Annotated[AsyncSession,Depends(get_db)]
+        request: Request,
+        token: Annotated[str | None, Depends(oauth2_scheme)],
+        db:Annotated[AsyncSession,Depends(get_db)],
+        access_cookie: Annotated[str | None, Cookie(alias=settings.access_cookie_name)] = None
 )-> User:
-    user_id = decode_token(token)
+    payload = decode_token(token or access_cookie or "")
+    user_id = payload.get("sub") if payload and payload.get("type") == "access" else None
     
     if not user_id:
         raise HTTPException(
@@ -29,6 +33,13 @@ async def get_current_user(
             detail="Usuário não encontrado"
         )
     
+    if payload.get("ver", 0) != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão expirada"
+        )
+
+    request.state.user_id = user.id
     return user
 
 

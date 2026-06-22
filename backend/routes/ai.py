@@ -32,6 +32,7 @@ from workers.ai_tasks import (
 from services.ai_usage_service import (
     count_user_reports_this_month
 )
+from services.redis_service import register_task_owner
 
 
 router = APIRouter(
@@ -124,6 +125,7 @@ async def generate_ai_case_study(
         student.id,
         current_user.id
     )
+    await register_task_owner(task.id, current_user.id, student.id)
 
     return {
         "message": "Relatório em processamento",

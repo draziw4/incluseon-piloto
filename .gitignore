@@ -15,6 +15,15 @@ frontend/.env
 node_modules/
 dist/
 build/
+backend/generated_reports/
+
+# Terraform local state and secrets
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+**/backend.hcl
 
 # Sistema
 .DS_Store

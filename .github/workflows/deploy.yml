@@ -1,0 +1,118 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_API_SERVICE: ${{ vars.ECS_API_SERVICE }}
+      ECS_WORKER_SERVICE: ${{ vars.ECS_WORKER_SERVICE }}
+      ECS_API_TASK_FAMILY: ${{ vars.ECS_API_TASK_FAMILY }}
+      ECS_WORKER_TASK_FAMILY: ${{ vars.ECS_WORKER_TASK_FAMILY }}
+      ECS_SUBNETS: ${{ vars.ECS_SUBNETS }}
+      ECS_SECURITY_GROUP: ${{ vars.ECS_SECURITY_GROUP }}
+      FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend
+        id: image
+        run: |
+          IMAGE_URI="$ECR_REPOSITORY:${{ github.event.workflow_run.head_sha || github.sha }}"
+          docker build -f backend/Dockerfile -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          echo "uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Register task definitions
+        id: tasks
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+        run: |
+          register_task() {
+            family="$1"
+            container="$2"
+            aws ecs describe-task-definition --task-definition "$family" --query taskDefinition > task.json
+            jq --arg image "$IMAGE_URI" --arg container "$container" '
+              del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)
+              | (.containerDefinitions[] | select(.name == $container) | .image) = $image
+            ' task.json > next-task.json
+            aws ecs register-task-definition --cli-input-json file://next-task.json --query 'taskDefinition.taskDefinitionArn' --output text
+          }
+          echo "api=$(register_task "$ECS_API_TASK_FAMILY" api)" >> "$GITHUB_OUTPUT"
+          echo "worker=$(register_task "$ECS_WORKER_TASK_FAMILY" worker)" >> "$GITHUB_OUTPUT"
+
+      - name: Run database migration
+        env:
+          API_TASK: ${{ steps.tasks.outputs.api }}
+        run: |
+          NETWORK="awsvpcConfiguration={subnets=[$ECS_SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+          OVERRIDES='{"containerOverrides":[{"name":"api","command":["alembic","upgrade","head"]}]}'
+          TASK_ARN=$(aws ecs run-task --cluster "$ECS_CLUSTER" --task-definition "$API_TASK" --launch-type FARGATE --network-configuration "$NETWORK" --overrides "$OVERRIDES" --query 'tasks[0].taskArn' --output text)
+          test "$TASK_ARN" != "None"
+          aws ecs wait tasks-stopped --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN"
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" --query 'tasks[0].containers[0].exitCode' --output text)
+          test "$EXIT_CODE" = "0"
+
+      - name: Deploy API and worker
+        env:
+          API_TASK: ${{ steps.tasks.outputs.api }}
+          WORKER_TASK: ${{ steps.tasks.outputs.worker }}
+        run: |
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_API_SERVICE" --task-definition "$API_TASK" --desired-count 1 >/dev/null
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --task-definition "$WORKER_TASK" --desired-count 1 >/dev/null
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_API_SERVICE" "$ECS_WORKER_SERVICE"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build and publish frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://${{ vars.API_DOMAIN }}
+        run: |
+          npm ci
+          npm run build
+          aws s3 sync dist "s3://$FRONTEND_BUCKET" --delete --exclude index.html --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp dist/index.html "s3://$FRONTEND_BUCKET/index.html" --cache-control "no-store" --content-type "text/html"
+          aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*" >/dev/null
+
+      - name: Smoke test
+        run: |
+          curl --fail --retry 10 --retry-delay 10 "https://$API_DOMAIN/ready"
+          curl --fail --retry 10 --retry-delay 10 "https://$FRONTEND_DOMAIN/"

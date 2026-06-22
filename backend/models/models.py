@@ -28,6 +28,19 @@ class AppointmentStatus(str, Enum):
     PENDING = "pending"
 
 
+class StudentGoalStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    PAUSED = "paused"
+
+
+class StudentGoalPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 
 class UserRole(str, Enum):
     ADMIN = "admin"
@@ -135,6 +148,7 @@ class User(Base):
     email:Mapped[str] = mapped_column(String(255),unique=True,nullable=False,index=True)
 
     password_hash: Mapped[str]= mapped_column(String(255),nullable=False)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     student_links: Mapped[list["StudentProfessional"]] = relationship(
     back_populates="user",
@@ -152,11 +166,28 @@ class User(Base):
     default=UserRole.PSYCHOLOGIST,
     nullable=False
 )
-    
+
     appointments: Mapped[list["Appointment"]] = relationship(
     back_populates="professional",
     cascade="all, delete-orphan"
 )
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship()
     
 
 
@@ -177,8 +208,6 @@ class Student(Base):
     psychologist: Mapped["User"] = relationship(
         back_populates="students"
     )
-
-    birth_date:Mapped[int] = mapped_column(Integer,nullable=False)
 
     name: Mapped[str] = mapped_column(
         String(255)
@@ -264,6 +293,14 @@ class Student(Base):
     back_populates="student",
     cascade="all, delete-orphan"
 )
+    ai_reports: Mapped[list["AIReport"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
+    goals: Mapped[list["StudentGoal"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
 
 
     
@@ -379,6 +416,55 @@ class BehaviorRecord(Base):
     )
 
 
+class StudentGoal(Base):
+    __tablename__ = "student_goals"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id"),
+        nullable=False,
+        index=True
+    )
+    created_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    area: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[StudentGoalStatus] = mapped_column(
+        SQLEnum(
+            StudentGoalStatus,
+            name="student_goal_statuses",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls]
+        ),
+        default=StudentGoalStatus.NOT_STARTED,
+        nullable=False
+    )
+    priority: Mapped[StudentGoalPriority] = mapped_column(
+        SQLEnum(
+            StudentGoalPriority,
+            name="student_goal_priorities",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls]
+        ),
+        default=StudentGoalPriority.MEDIUM,
+        nullable=False
+    )
+    target_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    progress: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    evidence_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    student: Mapped["Student"] = relationship(back_populates="goals")
+    created_by: Mapped["User"] = relationship()
+
+
 
 
 class Assessment(Base):
@@ -452,9 +538,20 @@ class AIReport(Base):
         primary_key=True
     )
 
+    task_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        unique=True,
+        index=True
+    )
+
     student_id: Mapped[int] = mapped_column(
         ForeignKey("students.id"),
         nullable=False
+    )
+
+    student: Mapped["Student"] = relationship(
+        back_populates="ai_reports"
     )
 
     created_by_id: Mapped[int] = mapped_column(
@@ -497,9 +594,56 @@ class AIReport(Base):
         nullable=True
     )
 
+    revision: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False
+    )
+
+    last_edited_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    revisions: Mapped[list["AIReportRevision"]] = relationship(
+        back_populates="report",
+        cascade="all, delete-orphan"
+    )
+
+
+class AIReportRevision(Base):
+    __tablename__ = "ai_report_revisions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("ai_reports.id"),
+        nullable=False,
+        index=True
+    )
+    edited_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False
+    )
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    report: Mapped["AIReport"] = relationship(
+        back_populates="revisions"
     )
 
 class Appointment(Base):

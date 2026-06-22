@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,9 +53,9 @@ export function LoginPage() {
     try {
       setLoginError("");
 
-      const response = await login(data);
+      await login(data);
 
-      auth.login(response.access_token);
+      await auth.login();
 
       navigate("/");
     } catch {
@@ -64,7 +64,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen `bg-gradient-to-br` from-blue-50 via-white to-sky-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-100">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
         <section className="hidden flex-col justify-between bg-blue-950 p-10 text-white lg:flex">
           <div>
@@ -220,12 +220,12 @@ export function LoginPage() {
                     Lembrar acesso
                   </label>
 
-                  <button
-                    type="button"
+                  <Link
+                    to="/forgot-password"
                     className="text-sm font-medium text-blue-600 hover:text-blue-700"
                   >
                     Esqueci minha senha
-                  </button>
+                  </Link>
                 </div>
 
                 <button

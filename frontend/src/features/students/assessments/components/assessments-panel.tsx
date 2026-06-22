@@ -5,6 +5,9 @@ import { Brain, Plus } from "lucide-react"
 import { useAssessments } from "../hooks/use-assessments"
 import { AssessmentCard } from "./assessment-card"
 import { CreateAssessmentModal } from "./create-assement-modal"
+import type { Assessment } from "../types/assessment"
+import { api } from "@/api/client"
+import { useQueryClient } from "@tanstack/react-query"
 
 type Props = {
   studentId: string
@@ -12,6 +15,14 @@ type Props = {
 
 export function AssessmentsPanel({ studentId }: Props) {
   const [openModal, setOpenModal] = useState(false)
+  const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null)
+  const queryClient = useQueryClient()
+
+  async function deleteAssessment(assessment: Assessment) {
+    if (!window.confirm("Excluir esta avaliação? Esta ação não pode ser desfeita.")) return
+    await api.delete(`/assessments/student/${studentId}/${assessment.id}`)
+    await queryClient.invalidateQueries({ queryKey: ["assessments", studentId] })
+  }
 
   const {
     data,
@@ -37,7 +48,7 @@ const assessments = Array.isArray(data)
         </div>
 
         <button
-          onClick={() => setOpenModal(true)}
+          onClick={() => { setEditingAssessment(null); setOpenModal(true) }}
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
@@ -63,6 +74,8 @@ const assessments = Array.isArray(data)
             <AssessmentCard
               key={assessment.id}
               assessment={assessment}
+              onEdit={() => { setEditingAssessment(assessment); setOpenModal(true) }}
+              onDelete={() => void deleteAssessment(assessment)}
             />
           ))}
         </div>
@@ -83,7 +96,7 @@ const assessments = Array.isArray(data)
           </p>
 
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => { setEditingAssessment(null); setOpenModal(true) }}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
             + Criar primeira avaliação
@@ -94,7 +107,8 @@ const assessments = Array.isArray(data)
       <CreateAssessmentModal
         studentId={studentId}
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() => { setOpenModal(false); setEditingAssessment(null) }}
+        assessment={editingAssessment}
       />
     </div>
   )

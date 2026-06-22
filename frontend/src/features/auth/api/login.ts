@@ -4,9 +4,7 @@ import { api } from "../../../api/client"
 import type { LoginData } from "../schemas/login-schema"
 
 type LoginResponse = {
-  access_token: string
   token_type: string
-  refresh_token?: string
 }
 
 export async function login(data: LoginData) {

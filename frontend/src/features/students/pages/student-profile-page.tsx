@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import {
   Activity,
@@ -8,6 +8,7 @@ import {
   Sparkles,
   BarChart3,
   UserCog,
+  Target,
 } from "lucide-react";
 
 import { useStudent } from "../hooks/use-student";
@@ -20,6 +21,11 @@ import { StudentTimelinePanel } from "../timeline/components/student-timeline-pa
 import { StudentAnalyticsPanel } from "../analytics/components/student-analytics-panel";
 import { AIReportsPanel } from "../reports/components/ai-reports-panel";
 import { StudentTeamPanel } from "../team/components/student-team-panel";
+import { StudentFormModal } from "../components/create-student-modal";
+import { DeleteStudentModal } from "../components/delete-student-modal";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { StudentGoalsPanel } from "../goals/components/student-goals-panel";
+import { useStudentProfessionals } from "../team/hooks/use-student-professionals";
 
 type StudentProfileTab =
   | "overview"
@@ -28,14 +34,28 @@ type StudentProfileTab =
   | "timeline"
   | "analytics"
   | "reports"
+  | "goals"
   | "team";
 
 export function StudentProfilePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const validTabs: StudentProfileTab[] = ["overview", "behavior", "assessments", "timeline", "analytics", "reports", "goals", "team"];
+  const activeTab: StudentProfileTab = validTabs.includes(requestedTab as StudentProfileTab)
+    ? requestedTab as StudentProfileTab
+    : "overview";
 
-  const [activeTab, setActiveTab] = useState<StudentProfileTab>("overview");
+  function selectTab(tab: StudentProfileTab) {
+    setSearchParams(tab === "overview" ? {} : { tab });
+  }
 
   const { data: student, isLoading, isError } = useStudent(id || "");
+  const { data: professionals } = useStudentProfessionals(id || "");
 
   if (isLoading) {
     return (
@@ -53,9 +73,18 @@ export function StudentProfilePage() {
     );
   }
 
+  const canManage = user?.role === "admin" || student.psychologist_id === user?.id;
+  const currentUserLink = professionals?.find((professional) => professional.user_id === user?.id);
+  const canManageGoals = canManage || Boolean(currentUserLink?.can_create_pei);
+
   return (
     <div className="space-y-6">
-      <StudentHeader student={student} />
+      <StudentHeader
+        student={student}
+        canManage={canManage}
+        onEdit={() => setEditing(true)}
+        onDelete={() => setDeleting(true)}
+      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
         <aside className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm xl:col-span-1">
@@ -64,47 +93,53 @@ export function StudentProfilePage() {
               active={activeTab === "overview"}
               icon={<Brain size={18} />}
               label="Visão geral"
-              onClick={() => setActiveTab("overview")}
+              onClick={() => selectTab("overview")}
             />
 
             <StudentProfileNavButton
               active={activeTab === "behavior"}
               icon={<Activity size={18} />}
               label="Registros ABA"
-              onClick={() => setActiveTab("behavior")}
+              onClick={() => selectTab("behavior")}
             />
 
             <StudentProfileNavButton
               active={activeTab === "assessments"}
               icon={<FileText size={18} />}
               label="Entrevistas e Avaliações"
-              onClick={() => setActiveTab("assessments")}
+              onClick={() => selectTab("assessments")}
             />
 
             <StudentProfileNavButton
               active={activeTab === "timeline"}
               icon={<Sparkles size={18} />}
               label="Timeline"
-              onClick={() => setActiveTab("timeline")}
+              onClick={() => selectTab("timeline")}
             />
             <StudentProfileNavButton
               active={activeTab === "analytics"}
               icon={<BarChart3 size={18} />}
               label="Análise"
-              onClick={() => setActiveTab("analytics")}
+              onClick={() => selectTab("analytics")}
             />
 
+            <StudentProfileNavButton
+              active={activeTab === "goals"}
+              icon={<Target size={18} />}
+              label="PEI e Metas"
+              onClick={() => selectTab("goals")}
+            />
             <StudentProfileNavButton
               active={activeTab === "reports"}
               icon={<FileText size={18} />}
               label="Relatórios IA"
-              onClick={() => setActiveTab("reports")}
+              onClick={() => selectTab("reports")}
             />
             <StudentProfileNavButton
               active={activeTab === "team"}
               icon={<UserCog size={18} />}
               label="Equipe"
-              onClick={() => setActiveTab("team")}
+              onClick={() => selectTab("team")}
             />
           </nav>
         </aside>
@@ -131,11 +166,21 @@ export function StudentProfilePage() {
           {activeTab === "reports" && (
             <AIReportsPanel studentId={student.id.toString()} />
           )}
+          {activeTab === "goals" && (
+            <StudentGoalsPanel studentId={student.id.toString()} canManage={canManageGoals} />
+          )}
           {activeTab === "team" && (
             <StudentTeamPanel studentId={student.id.toString()} />
           )}
         </main>
       </div>
+
+      <StudentFormModal open={editing} student={student} onClose={() => setEditing(false)} />
+      <DeleteStudentModal
+        student={deleting ? student : null}
+        onClose={() => setDeleting(false)}
+        onDeleted={() => navigate("/students", { replace: true })}
+      />
     </div>
   );
 }

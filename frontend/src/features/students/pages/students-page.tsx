@@ -4,11 +4,17 @@ import { Plus, Search, Users } from "lucide-react"
 
 import { useStudents } from "../hooks/use-students"
 import { StudentCard } from "../components/student-card"
-import { CreateStudentModal } from "../components/create-student-modal"
+import { StudentFormModal } from "../components/create-student-modal"
+import { DeleteStudentModal } from "../components/delete-student-modal"
+import type { Student } from "../types/student"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 
 export function StudentsPage() {
   const [search, setSearch] = useState("")
   const [openCreateModal, setOpenCreateModal] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null)
+  const { user } = useAuth()
 
   const {
     data,
@@ -75,6 +81,9 @@ export function StudentsPage() {
             <StudentCard
               key={student.id}
               student={student}
+              canManage={user?.role === "admin" || student.psychologist_id === user?.id}
+              onEdit={setEditingStudent}
+              onDelete={setDeletingStudent}
             />
           ))}
         </div>
@@ -104,10 +113,16 @@ export function StudentsPage() {
         </div>
       )}
 
-      <CreateStudentModal
-        open={openCreateModal}
-        onClose={() => setOpenCreateModal(false)}
+      <StudentFormModal
+        open={openCreateModal || Boolean(editingStudent)}
+        student={editingStudent}
+        onClose={() => {
+          setOpenCreateModal(false)
+          setEditingStudent(null)
+        }}
       />
+
+      <DeleteStudentModal student={deletingStudent} onClose={() => setDeletingStudent(null)} />
     </div>
   )
 }

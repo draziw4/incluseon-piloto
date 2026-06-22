@@ -31,6 +31,7 @@ from services.ai.providers.openai_provider import (
 )
 
 from services.pdf.pdf_generator import (
+    delete_generated_report,
     generate_case_study_pdf
 )
 
@@ -39,7 +40,14 @@ from services.permissions_service import (
 )
 
 
-@celery.task(bind=True)
+@celery.task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_jitter=True,
+    max_retries=3,
+)
 def generate_case_study_task(
     self,
     student_id: int,
@@ -47,6 +55,17 @@ def generate_case_study_task(
 ):
     async def run_task():
         async with AsyncSessionLocal() as db:
+            existing_result = await db.execute(
+                select(AIReport).where(AIReport.task_id == self.request.id)
+            )
+            existing_report = existing_result.scalar_one_or_none()
+            if existing_report:
+                return {
+                    "report": existing_report.content,
+                    "report_id": existing_report.id,
+                    "already_generated": True,
+                }
+
             user = await db.get(
                 User,
                 user_id
@@ -120,6 +139,7 @@ def generate_case_study_task(
             )
 
             ai_report = AIReport(
+                task_id=self.request.id,
                 student_id=student.id,
                 created_by_id=user_id,
                 report_type="case_study",
@@ -133,9 +153,13 @@ def generate_case_study_task(
 
             db.add(ai_report)
 
-            await db.commit()
-
-            await db.refresh(ai_report)
+            try:
+                await db.commit()
+                await db.refresh(ai_report)
+            except Exception:
+                await db.rollback()
+                delete_generated_report(pdf_path)
+                raise
 
             return {
                 "report": report_content,

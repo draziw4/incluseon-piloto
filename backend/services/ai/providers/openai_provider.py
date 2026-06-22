@@ -4,7 +4,9 @@ from config import settings
 
 
 client = AsyncOpenAI(
-    api_key=settings.openai_api_key
+    api_key=settings.openai_api_key.get_secret_value(),
+    timeout=60.0,
+    max_retries=2,
 )
 
 

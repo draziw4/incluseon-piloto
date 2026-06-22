@@ -1,12 +1,14 @@
-import { Brain, CalendarDays } from "lucide-react"
+import { Brain, CalendarDays, Pencil, Trash2 } from "lucide-react"
 
 import type { Assessment } from "../types/assessment"
 
 type Props = {
   assessment: Assessment
+  onEdit: () => void
+  onDelete: () => void
 }
 
-export function AssessmentCard({ assessment }: Props) {
+export function AssessmentCard({ assessment, onEdit, onDelete }: Props) {
   return (
     <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -28,9 +30,13 @@ export function AssessmentCard({ assessment }: Props) {
           </p>
         </div>
 
+        <div className="flex items-center gap-2">
         <div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
           <CalendarDays size={14} />
           {new Date(assessment.created_at).toLocaleDateString("pt-BR")}
+        </div>
+          <button type="button" onClick={onEdit} aria-label="Editar avaliação" className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>
+          <button type="button" onClick={onDelete} aria-label="Excluir avaliação" className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
         </div>
       </div>
 

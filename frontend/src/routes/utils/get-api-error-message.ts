@@ -21,6 +21,12 @@ export function getApiErrorMessage(error: unknown) {
         : "Recurso não encontrado."
     }
 
+    if (status === 409) {
+      return typeof detail === "string"
+        ? detail
+        : "O recurso foi alterado por outra pessoa. Atualize a página e tente novamente."
+    }
+
     if (status === 422) {
       return "Alguns dados enviados são inválidos. Verifique as informações."
     }

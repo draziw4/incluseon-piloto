@@ -5,6 +5,9 @@ import { Activity, Plus } from "lucide-react"
 import { useBehaviorRecords } from "../hooks/use-behavior-records"
 import { BehaviorRecordCard } from "./behavior-record-card"
 import { CreateBehaviorRecordModal } from "./create-behavior-record-modal"
+import type { BehaviorRecord } from "../types/behavior-record"
+import { api } from "@/api/client"
+import { useQueryClient } from "@tanstack/react-query"
 
 type Props = {
   studentId: string
@@ -12,6 +15,14 @@ type Props = {
 
 export function BehaviorRecordsPanel({ studentId }: Props) {
   const [openModal, setOpenModal] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<BehaviorRecord | null>(null)
+  const queryClient = useQueryClient()
+
+  async function deleteRecord(record: BehaviorRecord) {
+    if (!window.confirm("Excluir este registro ABA? Esta ação não pode ser desfeita.")) return
+    await api.delete(`/behavior-records/student/${studentId}/${record.id}`)
+    await queryClient.invalidateQueries({ queryKey: ["behavior-records", studentId] })
+  }
 
   const {
     data: records,
@@ -33,7 +44,7 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
         </div>
 
         <button
-          onClick={() => setOpenModal(true)}
+          onClick={() => { setEditingRecord(null); setOpenModal(true) }}
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
@@ -59,6 +70,8 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
             <BehaviorRecordCard
               key={record.id}
               record={record}
+              onEdit={() => { setEditingRecord(record); setOpenModal(true) }}
+              onDelete={() => void deleteRecord(record)}
             />
           ))}
         </div>
@@ -79,7 +92,7 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
           </p>
 
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => { setEditingRecord(null); setOpenModal(true) }}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
             + Criar primeiro registro
@@ -90,7 +103,8 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
       <CreateBehaviorRecordModal
         studentId={studentId}
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() => { setOpenModal(false); setEditingRecord(null) }}
+        record={editingRecord}
       />
     </div>
   )

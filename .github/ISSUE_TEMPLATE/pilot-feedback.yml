@@ -1,0 +1,38 @@
+name: Feedback do piloto
+description: Registre defeitos e melhorias sem incluir dados pessoais ou sensiveis.
+title: "[Piloto] "
+labels: ["pilot-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: "Nao informe nomes, diagnosticos, telefones, relatorios ou capturas com dados de alunos. Incidentes de seguranca devem usar o canal privado descrito em SECURITY.md."
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Tipo
+      options: [Defeito, Melhoria, Duvida]
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto sem dados pessoais
+      description: Informe perfil de usuario, tela e objetivo.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: input
+    id: request_id
+    attributes:
+      label: X-Request-ID, se disponivel

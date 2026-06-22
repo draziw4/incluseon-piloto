@@ -1,7 +1,8 @@
 import {
   CalendarDays,
   Download,
-  FileText
+  FileText,
+  Pencil
 } from "lucide-react"
 
 import type {
@@ -10,10 +11,18 @@ import type {
 
 type Props = {
   report: SavedAIReport
+  canEdit: boolean
+  isDownloading: boolean
+  onEdit: () => void
+  onDownload: () => void
 }
 
 export function SavedAIReportCard({
-  report
+  report,
+  canEdit,
+  isDownloading,
+  onEdit,
+  onDownload
 }: Props) {
   return (
     <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
@@ -32,7 +41,7 @@ export function SavedAIReportCard({
           </h3>
 
           <p className="mt-1 text-sm text-zinc-500">
-            Modelo: {report.model_used || "Não informado"}
+            Modelo: {report.model_used || "Não informado"} · Versão {report.revision}
           </p>
         </div>
 
@@ -54,17 +63,18 @@ export function SavedAIReportCard({
           Tokens usados: {report.total_tokens ?? "não registrado"}
         </p>
 
-        {report.pdf_path && (
-          <a
-            href={`http://localhost:8000/${report.pdf_path}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-          >
-            <Download size={16} />
-            Abrir PDF
-          </a>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {canEdit && (
+            <button type="button" onClick={onEdit} className="flex items-center justify-center gap-2 rounded-xl border border-blue-100 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
+              <Pencil size={16} /> Revisar
+            </button>
+          )}
+          {report.pdf_available && (
+            <button type="button" onClick={onDownload} disabled={isDownloading} className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+              <Download size={16} /> {isDownloading ? "Baixando..." : "Baixar PDF"}
+            </button>
+          )}
+        </div>
       </div>
     </article>
   )

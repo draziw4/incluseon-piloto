@@ -1,71 +1,61 @@
 import {
   BrowserRouter,
   Routes,
-  Route
+  Route,
+  Navigate
 } from "react-router-dom"
+import { lazy, Suspense } from "react"
 
-import { LoginPage } from "./pages/login-page"
-import { DashboardPage } from "./pages/dashboard-page"
-import { StudentsPage } from "./features/students/pages/students-page"
-import { StudentProfilePage } from "./features/students/pages/student-profile-page"
 import "./index.css"
 import { ProtectedRoute } from "./routes/protected-route"
 import { DashboardLayout } from "./layouts/dashboard-layout"
-import { AppointmentsPage } from "./features/appointments.ts/pages/appointments-page"
+
+const LoginPage = lazy(() => import("./pages/login-page").then((module) => ({ default: module.LoginPage })))
+const DashboardPage = lazy(() => import("./pages/dashboard-page").then((module) => ({ default: module.DashboardPage })))
+const StudentsPage = lazy(() => import("./features/students/pages/students-page").then((module) => ({ default: module.StudentsPage })))
+const StudentProfilePage = lazy(() => import("./features/students/pages/student-profile-page").then((module) => ({ default: module.StudentProfilePage })))
+const AppointmentsPage = lazy(() => import("./features/appointments/pages/appointments-page").then((module) => ({ default: module.AppointmentsPage })))
+const SettingsPage = lazy(() => import("./pages/settings-page").then((module) => ({ default: module.SettingsPage })))
+const PasswordResetPage = lazy(() => import("./pages/password-reset-page").then((module) => ({ default: module.PasswordResetPage })))
+const modulePages = import("./pages/module-pages")
+const BehaviorRecordsPage = lazy(() => modulePages.then((module) => ({ default: module.BehaviorRecordsPage })))
+const AssessmentsPage = lazy(() => modulePages.then((module) => ({ default: module.AssessmentsPage })))
+const InterviewsPage = lazy(() => modulePages.then((module) => ({ default: module.InterviewsPage })))
+const GoalsPage = lazy(() => modulePages.then((module) => ({ default: module.GoalsPage })))
+const CaseStudiesPage = lazy(() => modulePages.then((module) => ({ default: module.CaseStudiesPage })))
+const ReportsPage = lazy(() => modulePages.then((module) => ({ default: module.ReportsPage })))
+const AnalyticsPage = lazy(() => modulePages.then((module) => ({ default: module.AnalyticsPage })))
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="p-6 text-sm text-slate-500">Carregando...</div>}>
       <Routes>
         <Route
           path="/login"
           element={<LoginPage />}
         />
+        <Route path="/forgot-password" element={<PasswordResetPage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
 
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <DashboardPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route index element={<DashboardPage />} />
+          <Route path="students" element={<StudentsPage />} />
+          <Route path="students/:id" element={<StudentProfilePage />} />
+          <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="behavior-records" element={<BehaviorRecordsPage />} />
+          <Route path="assessments" element={<AssessmentsPage />} />
+          <Route path="interviews" element={<InterviewsPage />} />
+          <Route path="goals" element={<GoalsPage />} />
+          <Route path="case-studies" element={<CaseStudiesPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
 
-        <Route
-          path="/students"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <StudentsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/students/:id"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <StudentProfilePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/appointments"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <AppointmentsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

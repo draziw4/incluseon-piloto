@@ -7,7 +7,10 @@ import {
   type CreateBehaviorRecordData,
   type CreateBehaviorRecordFormData,
 } from "../schemas/create-behavior-record-schema";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import type { BehaviorRecord } from "../types/behavior-record";
 import { AlertCircle } from "lucide-react";
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message";
 import { useCreateBehaviorRecord } from "../hooks/use-create-behavior-record";
@@ -23,10 +26,16 @@ type Props = {
   studentId: string;
   open: boolean;
   onClose: () => void;
+  record?: BehaviorRecord | null;
 };
 
-export function CreateBehaviorRecordModal({ studentId, open, onClose }: Props) {
+export function CreateBehaviorRecordModal({ studentId, open, onClose, record }: Props) {
   const mutation = useCreateBehaviorRecord(studentId);
+  const queryClient = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: (data: CreateBehaviorRecordData) => api.patch(`/behavior-records/student/${studentId}/${record?.id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["behavior-records", studentId] })
+  });
   const [actionError, setActionError] = useState<string | null>(null);
 
   const {
@@ -38,14 +47,23 @@ export function CreateBehaviorRecordModal({ studentId, open, onClose }: Props) {
     resolver: zodResolver(createBehaviorRecordSchema),
   });
 
+  useEffect(() => {
+    if (open && record) reset({
+      ...record,
+      strategy_effective: record.strategy_effective === null || record.strategy_effective === undefined ? "" : String(record.strategy_effective),
+      environment: record.environment ?? undefined,
+      intensity: record.intensity ?? undefined,
+      duration_minutes: record.duration_minutes ?? undefined
+    } as unknown as CreateBehaviorRecordFormData);
+    if (open && !record) reset({});
+  }, [open, record, reset]);
+
   async function onSubmit(data: CreateBehaviorRecordData) {
     try {
       setActionError(null);
 
-      await mutation.mutateAsync({
-        studentId,
-        data,
-      });
+      if (record) await updateMutation.mutateAsync(data);
+      else await mutation.mutateAsync({ studentId, data });
 
       reset();
       onClose();
@@ -61,7 +79,7 @@ export function CreateBehaviorRecordModal({ studentId, open, onClose }: Props) {
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
-              Novo registro ABA
+              {record ? "Editar registro ABA" : "Novo registro ABA"}
             </h2>
 
             <p className="text-sm text-zinc-500">
@@ -249,30 +267,6 @@ export function CreateBehaviorRecordModal({ studentId, open, onClose }: Props) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Estratégia utilizada
-            </label>
-
-            <select
-              {...register("strategy_used")}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 text-sm outline-none focus:border-blue-500"
-            >
-              <option value="">Selecione a estratégia</option>
-
-              {STRATEGY_OPTIONS.map((strategy) => (
-                <option key={strategy} value={strategy}>
-                  {strategy}
-                </option>
-              ))}
-            </select>
-
-            {errors.strategy_used && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.strategy_used.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
               Hipótese da função do comportamento
             </label>
 
@@ -319,10 +313,10 @@ export function CreateBehaviorRecordModal({ studentId, open, onClose }: Props) {
 
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || updateMutation.isPending}
               className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {mutation.isPending ? "Salvando..." : "Salvar registro"}
+              {mutation.isPending || updateMutation.isPending ? "Salvando..." : "Salvar registro"}
             </button>
           </div>
         </form>

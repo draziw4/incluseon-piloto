@@ -1,7 +1,8 @@
 import { api } from "../../../api/client"
 
-import type { Student } from "@/features/auth/types/student"
-import type { PaginatedResponse } from "@/features/auth/types/pagination"
+import type { PaginatedResponse } from "@/types/pagination"
+
+import type { Student } from "../types/student"
 
 type GetStudentsParams = {
   page?: number

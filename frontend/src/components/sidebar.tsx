@@ -1,68 +1,9 @@
-import {
-  LayoutDashboard,
-  Users,
-  CalendarDays,
-  Brain,
-  FileText,
-  Activity,
-  BarChart3,
-  ClipboardList,
-  Settings,
-  LogOut,
-  Sparkles
-} from "lucide-react"
+import { Settings, LogOut, Sparkles } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
 
 import { useAuth } from "../features/auth/hooks/use-auth"
-
-const menuItems = [
-  {
-    label: "Painel",
-    path: "/",
-    icon: LayoutDashboard
-  },
-  {
-    label: "Meus Alunos",
-    path: "/students",
-    icon: Users
-  },
-  {
-    label: "Atendimentos",
-    path: "/appointments",
-    icon: CalendarDays
-  },
-  {
-    label: "Registros ABA",
-    path: "/behavior-records",
-    icon: Activity
-  },
-  {
-    label: "Avaliações",
-    path: "/assessments",
-    icon: Brain
-  },
-  {
-    label: "Entrevistas",
-    path: "/interviews",
-    icon: ClipboardList
-  },
-  {
-    label: "Estudos de Caso IA",
-    path: "/case-studies",
-    icon: Sparkles
-  },
-  {
-    label: "Relatórios",
-    path: "/reports",
-    icon: FileText
-  },
-  {
-    label: "Analytics",
-    path: "/analytics",
-    icon: BarChart3
-  }
-]
+import { navigationItems } from "../routes/navigation"
 
 export function Sidebar() {
   const { user, logout } = useAuth()
@@ -84,14 +25,15 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-5">
-        {menuItems.map((item) => {
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+        {navigationItems.map((item) => {
           const Icon = item.icon
 
           return (
             <NavLink
               key={item.path}
               to={item.path}
+              end={item.path === "/"}
               className={({ isActive }) =>
                 [
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition",
@@ -109,10 +51,10 @@ export function Sidebar() {
       </nav>
 
       <div className="space-y-3 border-t border-blue-100 p-4">
-        <button className="flex w-full items-center gap-3 rounded-xl border border-blue-100 px-3 py-3 text-sm font-medium text-blue-700 hover:bg-blue-50">
+        <NavLink to="/settings" className="flex w-full items-center gap-3 rounded-xl border border-blue-100 px-3 py-3 text-sm font-medium text-blue-700 hover:bg-blue-50">
           <Settings size={18} />
           Configurações
-        </button>
+        </NavLink>
 
         <div className="flex items-center gap-3 rounded-xl bg-blue-50 p-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
@@ -129,7 +71,10 @@ export function Sidebar() {
           </div>
 
           <button
+            type="button"
             onClick={logout}
+            aria-label="Sair da conta"
+            title="Sair"
             className="text-zinc-400 hover:text-red-500"
           >
             <LogOut size={18} />

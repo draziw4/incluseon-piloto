@@ -159,3 +159,32 @@ async def require_student_permission(
 
 
     return student
+
+
+async def require_student_report_access(
+    db: AsyncSession,
+    user: User,
+    student_id: int
+) -> Student:
+    student = await require_student_access(
+        db=db,
+        user=user,
+        student_id=student_id
+    )
+
+    if user.role == UserRole.ADMIN or student.psychologist_id == user.id:
+        return student
+
+    link = await get_student_professional_link(
+        db=db,
+        user_id=user.id,
+        student_id=student_id
+    )
+
+    if link and (link.can_view_reports or link.can_generate_ai_report):
+        return student
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=PERMISSION_MESSAGES["can_view_reports"]
+    )

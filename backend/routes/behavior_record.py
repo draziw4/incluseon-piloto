@@ -2,6 +2,8 @@ from fastapi import (
     APIRouter,
     Depends,
     Query
+    ,HTTPException,
+    status
 )
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +29,8 @@ from models.models import (
 
 from schemas.behavior_record import (
     BehaviorRecordCreate,
-    BehaviorRecordResponse
+    BehaviorRecordResponse,
+    BehaviorRecordUpdate
 )
 
 
@@ -166,3 +169,40 @@ async def get_behavior_records(
     records = result.scalars().all()
 
     return records
+
+
+async def get_record_or_404(db: AsyncSession, student_id: int, record_id: int):
+    record = await db.get(BehaviorRecord, record_id)
+    if not record or record.student_id != student_id:
+        raise HTTPException(status_code=404, detail="Registro ABA não encontrado")
+    return record
+
+
+@router.patch("/student/{student_id}/{record_id}", response_model=BehaviorRecordResponse)
+async def update_behavior_record(
+    student_id: int,
+    record_id: int,
+    data: BehaviorRecordUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    await require_student_permission(db, current_user, student_id, "can_register_aba")
+    record = await get_record_or_404(db, student_id, record_id)
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(record, key, value)
+    await db.commit()
+    await db.refresh(record)
+    return record
+
+
+@router.delete("/student/{student_id}/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_behavior_record(
+    student_id: int,
+    record_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    await require_student_permission(db, current_user, student_id, "can_register_aba")
+    record = await get_record_or_404(db, student_id, record_id)
+    await db.delete(record)
+    await db.commit()

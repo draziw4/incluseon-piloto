@@ -9,7 +9,8 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password:str
+    password: str = Field(min_length=8, max_length=128)
+    role: UserRole = UserRole.PSYCHOLOGIST
 
 
 class UserResponse(UserBase):
@@ -22,7 +23,22 @@ class UserResponse(UserBase):
 class UserUpdate(UserBase):
     name: str | None = None
     email: EmailStr | None = None 
-    password: str | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+    role: UserRole | None = None
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=6)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 

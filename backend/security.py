@@ -1,5 +1,7 @@
 from pwdlib import PasswordHash
-from datetime import datetime,timedelta,UTC
+from datetime import datetime, timedelta, UTC
+from typing import Any
+import secrets
 from jose import jwt,JWTError
 from fastapi.security import OAuth2PasswordBearer
 
@@ -7,7 +9,8 @@ from config import settings
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
+    tokenUrl="/auth/login",
+    auto_error=False
 )
 
 
@@ -19,16 +22,15 @@ def verify_password(plain_password:str,hashed_password:str) -> str:
     return password_hash.verify(plain_password,hashed_password)
 
 
-def create_access_token(
-        user_id:int
-):
+def create_access_token(user_id: int, token_version: int = 0):
     expire = datetime.now(UTC) + timedelta(
-        days=settings.access_token_expire_minutes
+        minutes=settings.access_token_expire_minutes
     )
 
     payload = {
         "sub": str(user_id),
-        "type": "refresh",
+        "type": "access",
+        "ver": token_version,
         "exp": expire
     }
 
@@ -38,7 +40,7 @@ def create_access_token(
         algorithm=settings.algorithm
     )
 
-def create_refresh_token(user_id: int):
+def create_refresh_token(user_id: int, token_version: int = 0):
 
     expire = datetime.now(UTC) + timedelta(
         days=settings.refresh_token_expire_days
@@ -47,6 +49,8 @@ def create_refresh_token(user_id: int):
     payload = {
         "sub": str(user_id),
         "type": "refresh",
+        "ver": token_version,
+        "jti": secrets.token_urlsafe(24),
         "exp": expire
     }
 
@@ -56,14 +60,23 @@ def create_refresh_token(user_id: int):
         algorithm=settings.algorithm
     )
 
-def decode_token(token:str):
+def decode_token(token: str) -> dict[str, Any] | None:
     try:
-        payload = jwt.decode(
+        return jwt.decode(
             token,
             settings.secret_key.get_secret_value(),
             algorithms=[settings.algorithm]
         )
-        
-        return payload.get("sub")
     except JWTError:
         return None
+
+
+def decode_access_token_subject(token: str) -> str | None:
+    payload = decode_token(token)
+
+    if not payload or payload.get("type") != "access":
+        return None
+
+    subject = payload.get("sub")
+
+    return subject if isinstance(subject, str) else None

@@ -18,6 +18,12 @@ import { useAIUsage } from "../hooks/use-ai-usage"
 
 import { AIUsageCard } from "./ai-usage-card"
 import { SavedAIReportCard } from "./saved-ai-report-card"
+import { EditAIReportModal } from "./edit-ai-report-modal"
+import type { SavedAIReport } from "../types/saved-ai-report"
+import { downloadAIReport } from "../api/download-ai-report"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useStudentProfessionals } from "../../team/hooks/use-student-professionals"
+import { useStudent } from "../../hooks/use-student"
 
 type Props = {
   studentId: string
@@ -26,6 +32,11 @@ type Props = {
 export function AIReportsPanel({ studentId }: Props) {
   const [taskId, setTaskId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [editingReport, setEditingReport] = useState<SavedAIReport | null>(null)
+  const [downloadingReportId, setDownloadingReportId] = useState<number | null>(null)
+  const { user } = useAuth()
+  const { data: student } = useStudent(studentId)
+  const { data: professionals } = useStudentProfessionals(studentId)
 
   const queryClient = useQueryClient()
 
@@ -57,6 +68,14 @@ export function AIReportsPanel({ studentId }: Props) {
 
   const hasSuccess =
     taskStatus?.status === "SUCCESS"
+
+  const currentUserLink = professionals?.find(
+    (professional) => professional.user_id === user?.id
+  )
+  const canEditReports =
+    user?.role === "admin" ||
+    student?.psychologist_id === user?.id ||
+    Boolean(currentUserLink?.can_generate_ai_report)
 
   useEffect(() => {
     if (taskStatus?.status === "SUCCESS") {
@@ -96,6 +115,26 @@ export function AIReportsPanel({ studentId }: Props) {
       const message = getApiErrorMessage(error)
 
       setActionError(message)
+    }
+  }
+
+  async function handleDownload(report: SavedAIReport) {
+    try {
+      setActionError(null)
+      setDownloadingReportId(report.id)
+      const file = await downloadAIReport(report.id)
+      const url = URL.createObjectURL(file)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `estudo-de-caso-${report.student_id}-${report.id}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      setActionError(getApiErrorMessage(error))
+    } finally {
+      setDownloadingReportId(null)
     }
   }
 
@@ -294,6 +333,10 @@ export function AIReportsPanel({ studentId }: Props) {
                 <SavedAIReportCard
                   key={report.id}
                   report={report}
+                  canEdit={canEditReports}
+                  isDownloading={downloadingReportId === report.id}
+                  onEdit={() => setEditingReport(report)}
+                  onDownload={() => handleDownload(report)}
                 />
               ))}
             </div>
@@ -317,6 +360,15 @@ export function AIReportsPanel({ studentId }: Props) {
             </div>
           )}
       </section>
+
+      {editingReport && (
+        <EditAIReportModal
+          key={editingReport.id}
+          report={editingReport}
+          studentId={studentId}
+          onClose={() => setEditingReport(null)}
+        />
+      )}
     </div>
   )
 }

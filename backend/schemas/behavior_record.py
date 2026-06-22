@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel,ConfigDict
@@ -24,7 +24,7 @@ class SchoolEnvironment(str, Enum):
     INDIVIDUAL_SERVICE = "Atendimento individual"
     EXTERNAL_ACTIVITY = "Atividade externa"
     OTHER = "Outro"
-    
+
 
 class BehaviorRecordBase(BaseModel):
 
@@ -38,8 +38,8 @@ class BehaviorRecordBase(BaseModel):
     environment: SchoolEnvironment | None = None
     people_present: str | None = None
 
-    intensity: int | None = None
-    duration_minutes: int | None = None
+    intensity: int | None = Field(default=None, ge=1, le=10)
+    duration_minutes: int | None = Field(default=None, ge=0)
 
     function_hypothesis: str | None = None
 
@@ -74,8 +74,8 @@ class BehaviorRecordUpdate(
     environment: str | None = None
     people_present: str | None = None
 
-    intensity: int | None = None
-    duration_minutes: int | None = None
+    intensity: int | None = Field(default=None, ge=1, le=10)
+    duration_minutes: int | None = Field(default=None, ge=0)
 
     function_hypothesis: str | None = None
 
@@ -96,5 +96,3 @@ class BehaviorRecordResponse(
 
 
 from enum import Enum
-
-

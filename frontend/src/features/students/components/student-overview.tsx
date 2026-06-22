@@ -1,4 +1,4 @@
-import type { Student } from "@/features/auth/types/student"
+import type { Student } from "../types/student"
 
 type Props = {
   student: Student
