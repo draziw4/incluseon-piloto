@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr,Field,ConfigDict
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from models.models import UserRole
 
 
@@ -18,6 +20,7 @@ class UserResponse(UserBase):
 
     id:int
     role:UserRole
+    auth_provider: str
 
 
 class UserUpdate(UserBase):
@@ -39,6 +42,31 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     token: str = Field(min_length=32, max_length=256)
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class PublicRegistration(BaseModel):
+    name: str = Field(min_length=3, max_length=255)
+    email: EmailStr
+    password: str = Field(min_length=12, max_length=128)
+    accepted_terms: Literal[True]
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if len(cleaned) < 3:
+            raise ValueError("Informe um nome válido")
+        return cleaned
+
+
+class GoogleCredentialRequest(BaseModel):
+    credential: str = Field(min_length=100, max_length=5000)
+
+
+class AuthCapabilities(BaseModel):
+    registration_enabled: bool
+    google_enabled: bool
+    google_client_id: str | None = None
 
 
 

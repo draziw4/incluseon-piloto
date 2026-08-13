@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,14 +21,28 @@ import {
 } from "@/features/auth/schemas/login-schema";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import {
+  getAuthCapabilities,
+  loginWithGoogle,
+} from "@/features/auth/api/public-auth";
+import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
+import { getApiErrorMessage } from "@/routes/utils/get-api-error-message";
 import { login } from "../api/login";
 
 export function LoginPage() {
   const auth = useAuth();
+  const refreshAuthenticatedUser = auth.login;
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [googlePending, setGooglePending] = useState(false);
+  const capabilities = useQuery({
+    queryKey: ["auth-capabilities"],
+    queryFn: getAuthCapabilities,
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: 1,
+  });
 
   const {
     register,
@@ -36,6 +51,29 @@ export function LoginPage() {
   } = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
   });
+
+  const handleGoogleCredential = useCallback(
+    async (credential: string) => {
+      try {
+        setGooglePending(true);
+        setLoginError("");
+        await loginWithGoogle(credential);
+        await refreshAuthenticatedUser();
+        navigate("/");
+      } catch (error) {
+        setLoginError(getApiErrorMessage(error));
+      } finally {
+        setGooglePending(false);
+      }
+    },
+    [navigate, refreshAuthenticatedUser],
+  );
+
+  const handleGoogleError = useCallback(() => {
+    setLoginError("Não foi possível carregar o login do Google.");
+  }, []);
+
+  const googleClientId = capabilities.data?.google_client_id;
 
   if (auth.loading) {
     return (
@@ -55,7 +93,7 @@ export function LoginPage() {
 
       await login(data);
 
-      await auth.login();
+      await refreshAuthenticatedUser();
 
       navigate("/");
     } catch {
@@ -151,10 +189,29 @@ export function LoginPage() {
               </div>
 
               {loginError && (
-                <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div role="alert" className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {loginError}
                 </div>
               )}
+
+              {capabilities.data?.google_enabled && googleClientId ? (
+                <>
+                  <GoogleSignInButton
+                    clientId={googleClientId}
+                    onCredential={handleGoogleCredential}
+                    onError={handleGoogleError}
+                    busy={googlePending}
+                  />
+                  <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500">
+                    Ao continuar, você aceita os <Link className="text-blue-600" to="/terms">Termos de Uso</Link> e a <Link className="text-blue-600" to="/privacy">Política de Privacidade</Link>.
+                  </p>
+                  <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-zinc-400">
+                    <span className="h-px flex-1 bg-zinc-200" />
+                    ou continue com e-mail
+                    <span className="h-px flex-1 bg-zinc-200" />
+                  </div>
+                </>
+              ) : null}
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
@@ -167,6 +224,7 @@ export function LoginPage() {
 
                     <input
                       type="email"
+                      autoComplete="email"
                       placeholder="seuemail@email.com"
                       {...register("email")}
                       className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
@@ -190,6 +248,7 @@ export function LoginPage() {
 
                     <input
                       type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
                       placeholder="Digite sua senha"
                       {...register("password")}
                       className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
@@ -197,6 +256,7 @@ export function LoginPage() {
 
                     <button
                       type="button"
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                       onClick={() => setShowPassword(!showPassword)}
                       className="text-zinc-400 hover:text-blue-600"
                     >
@@ -236,6 +296,15 @@ export function LoginPage() {
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </button>
               </form>
+
+              {capabilities.data?.registration_enabled ? (
+                <p className="mt-6 text-center text-sm text-zinc-500">
+                  Ainda não tem acesso?{" "}
+                  <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700">
+                    Criar conta
+                  </Link>
+                </p>
+              ) : null}
 
               <div className="mt-8 rounded-2xl bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-950">

@@ -5,20 +5,35 @@ import logging
 import secrets
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from google.auth.exceptions import GoogleAuthError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from database import get_db
-from security import create_access_token,verify_password,create_refresh_token,decode_token
+from security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_password,
+)
 
-from models.models import PasswordResetToken, User
+from models.models import PasswordResetToken, User, UserRole
 from schemas.token import Token,RefreshTokenRequest
-from schemas.user import PasswordResetConfirm, PasswordResetRequest
+from schemas.user import (
+    AuthCapabilities,
+    GoogleCredentialRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    PublicRegistration,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from services.redis_service import client as redis_client
 import hashlib
 from config import settings
 from dependencies import get_current_user
 from services.email_service import send_password_reset_email
+from services.google_identity import verify_google_credential
 
 
 logger = logging.getLogger("incluseon.auth")
@@ -28,6 +43,160 @@ router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
 )
+
+
+@router.get("/config", response_model=AuthCapabilities)
+async def auth_capabilities():
+    return AuthCapabilities(
+        registration_enabled=settings.self_registration_enabled,
+        google_enabled=bool(settings.google_client_id),
+        google_client_id=settings.google_client_id,
+    )
+
+
+def issue_session(request: Request, response: Response, user: User) -> Token:
+    access_token = create_access_token(user.id, user.token_version)
+    refresh_token = create_refresh_token(user.id, user.token_version)
+    request.state.user_id = user.id
+    set_auth_cookies(response, access_token, refresh_token)
+    return Token()
+
+
+async def enforce_public_auth_rate_limit(
+    request: Request,
+    purpose: str,
+    subject: str,
+    limit: int,
+    window_seconds: int,
+) -> None:
+    identifier = f"{request.client.host if request.client else 'unknown'}:{subject.lower()}"
+    rate_key = f"{purpose}:{hashlib.sha256(identifier.encode()).hexdigest()}"
+    try:
+        attempts = int(await redis_client.get(rate_key) or 0)
+        if attempts >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Muitas tentativas. Aguarde alguns minutos.",
+            )
+        async with redis_client.pipeline(transaction=True) as pipe:
+            await pipe.incr(rate_key).expire(rate_key, window_seconds).execute()
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Serviço de autenticação temporariamente indisponível",
+        ) from error
+
+
+@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+async def register_account(
+    request: Request,
+    response: Response,
+    data: PublicRegistration,
+    db: AsyncSession = Depends(get_db),
+):
+    if not settings.self_registration_enabled:
+        raise HTTPException(status_code=403, detail="Criação de conta indisponível")
+
+    await enforce_public_auth_rate_limit(
+        request,
+        purpose="account-registration",
+        subject=data.email,
+        limit=5,
+        window_seconds=3600,
+    )
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == data.email.lower())
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="E-mail já cadastrado")
+
+    user = User(
+        name=data.name.strip(),
+        email=data.email.lower(),
+        password_hash=hash_password(data.password),
+        role=UserRole.PSYCHOLOGIST,
+        auth_provider="password",
+    )
+    db.add(user)
+    try:
+        await db.commit()
+    except IntegrityError as error:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="E-mail já cadastrado") from error
+    await db.refresh(user)
+    return issue_session(request, response, user)
+
+
+@router.post("/google", response_model=Token)
+async def google_login(
+    request: Request,
+    response: Response,
+    data: GoogleCredentialRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    client_id = settings.google_client_id
+    if not client_id:
+        raise HTTPException(status_code=503, detail="Login com Google indisponível")
+
+    await enforce_public_auth_rate_limit(
+        request,
+        purpose="google-login",
+        subject=request.client.host if request.client else "unknown",
+        limit=20,
+        window_seconds=900,
+    )
+    try:
+        identity = await asyncio.to_thread(
+            verify_google_credential,
+            data.credential,
+            client_id,
+        )
+    except (GoogleAuthError, ValueError) as error:
+        raise HTTPException(status_code=401, detail="Identidade Google inválida") from error
+
+    subject_result = await db.execute(
+        select(User).where(User.google_subject == identity.subject)
+    )
+    user = subject_result.scalar_one_or_none()
+    if user is None:
+        email_result = await db.execute(
+            select(User).where(func.lower(User.email) == identity.email)
+        )
+        user = email_result.scalar_one_or_none()
+
+    if user is None:
+        if not settings.self_registration_enabled:
+            raise HTTPException(status_code=403, detail="Criação de conta indisponível")
+        user = User(
+            name=identity.name,
+            email=identity.email,
+            password_hash=hash_password(secrets.token_urlsafe(48)),
+            role=UserRole.PSYCHOLOGIST,
+            auth_provider="google",
+            google_subject=identity.subject,
+        )
+        db.add(user)
+    else:
+        if user.role != UserRole.PSYCHOLOGIST:
+            raise HTTPException(
+                status_code=403,
+                detail="Login Google permitido somente para contas profissionais",
+            )
+        if user.google_subject not in {None, identity.subject}:
+            raise HTTPException(status_code=409, detail="Conta Google já vinculada")
+        user.google_subject = identity.subject
+        if user.auth_provider == "password":
+            user.auth_provider = "password_google"
+
+    try:
+        await db.commit()
+    except IntegrityError as error:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Conta Google já vinculada") from error
+    await db.refresh(user)
+    return issue_session(request, response, user)
 
 @router.post("/login")
 async def login(
@@ -73,16 +242,12 @@ async def login(
             detail="Email ou senha inválidos"
         )
 
-    access_token = create_access_token(user.id, user.token_version)
-    refresh_token = create_refresh_token(user.id, user.token_version)
-    request.state.user_id = user.id
     try:
         await redis_client.delete(rate_key)
     except Exception:
         pass
 
-    set_auth_cookies(response, access_token, refresh_token)
-    return Token()
+    return issue_session(request, response, user)
 
 
 async def record_failed_login(rate_key: str) -> None:
@@ -265,8 +430,6 @@ async def confirm_password_reset(
     user = await db.get(User, reset.user_id)
     if not user:
         raise HTTPException(status_code=400, detail="Token inválido ou expirado")
-
-    from security import hash_password
 
     user.password_hash = hash_password(data.new_password)
     user.token_version += 1

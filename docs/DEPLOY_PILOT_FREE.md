@@ -21,7 +21,29 @@ O Blueprint está em `render.pilot-free.yaml` e usa `infra/render/pilot/Dockerfi
 - A plataforma pode suspender os serviços se os limites mensais gratuitos forem excedidos.
 - O ambiente fica nos Estados Unidos; por isso, somente dados sintéticos são permitidos.
 
-## Credenciais
+## Contas e autenticação
+
+O piloto aceita três formas de acesso:
+
+- conta administrativa criada somente pelas variáveis protegidas do Render;
+- conta profissional inicial criada pelo `seed_pilot.py`;
+- cadastro público de novos profissionais em `/register`.
+
+O cadastro público nunca recebe o perfil pelo navegador. Toda nova conta é criada no backend exclusivamente como `psychologist`, exige senha com pelo menos 12 caracteres e aceite dos termos. As rotas públicas possuem limite de tentativas no Redis.
+
+Também é possível entrar ou criar a conta com Google Identity Services. O backend valida o ID token diretamente com o Google, exige `email_verified=true` e usa o `sub` como identificador estável. Se o e-mail verificado já existir, a identidade Google é vinculada à conta profissional existente.
+
+Para habilitar Google no Render:
+
+1. Criar uma credencial OAuth 2.0 do tipo **Aplicativo da Web** no Google Cloud.
+2. Adicionar `https://incluseon-piloto-validacao.onrender.com` em **Origens JavaScript autorizadas**.
+3. Não é necessária URI de redirecionamento porque o botão envia a credencial ao callback JavaScript.
+4. Gravar somente o **Client ID** na variável `GOOGLE_CLIENT_ID`; o Client Secret não é usado nem deve ser enviado ao frontend.
+5. Em modo de teste no Google Cloud, adicionar cada conta Google avaliadora à lista de usuários de teste.
+
+As páginas públicas `/privacy` e `/terms` documentam o uso básico de identidade e a proibição de dados reais neste piloto.
+
+## Credenciais iniciais
 
 O deploy exige cinco variáveis não versionadas:
 
@@ -37,7 +59,7 @@ Nunca envie essas credenciais para issues públicas nem as grave no repositório
 
 ## Fluxo do avaliador
 
-1. Entrar com o usuário profissional fornecido.
+1. Criar uma conta profissional com e-mail e senha, usar Google ou entrar com o usuário profissional fornecido.
 2. Navegar pelos módulos usando somente o `Aluno Demonstração 01`.
 3. Clicar em `Enviar feedback` na tela em que encontrou o problema ou melhoria.
 4. Informar tipo, resumo, relato e resultado esperado sem dados pessoais.
@@ -62,6 +84,9 @@ Nunca envie essas credenciais para issues públicas nem as grave no repositório
 6. O relatório demonstra claramente `sem IA externa`.
 7. O PDF começa com a assinatura `%PDF` e abre corretamente.
 8. A criação pública em `POST /api/users` continua protegida.
+9. O cadastro em `/register` cria somente um usuário `psychologist` e inicia a sessão em cookie seguro.
+10. `GET /api/auth/config` expõe apenas as capacidades públicas e o Client ID do Google.
+11. Um token Google inválido ou com e-mail não verificado é recusado.
 
 ## Encerramento do piloto
 

@@ -25,6 +25,10 @@ services:
         value: pilot-demo-no-external-ai
       - key: PILOT_DEMO_MODE
         value: "true"
+      - key: SELF_REGISTRATION_ENABLED
+        value: "true"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       - key: PILOT_ADMIN_EMAIL
         sync: false
       - key: PILOT_ADMIN_PASSWORD

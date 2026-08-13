@@ -33,9 +33,9 @@ export function AuthProvider({ children }: Props) {
     }
   }, [clearSession])
 
-  async function login() {
+  const login = useCallback(async () => {
     await loadUser()
-  }
+  }, [loadUser])
 
   useEffect(() => {
     queueMicrotask(() => void loadUser())

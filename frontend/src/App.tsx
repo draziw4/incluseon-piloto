@@ -12,6 +12,10 @@ import { DashboardLayout } from "./layouts/dashboard-layout"
 import { isPilotMode } from "./config/pilot"
 
 const LoginPage = lazy(() => import("./pages/login-page").then((module) => ({ default: module.LoginPage })))
+const RegisterPage = lazy(() => import("./pages/register-page").then((module) => ({ default: module.RegisterPage })))
+const legalPages = import("./pages/legal-pages")
+const PrivacyPage = lazy(() => legalPages.then((module) => ({ default: module.PrivacyPage })))
+const TermsPage = lazy(() => legalPages.then((module) => ({ default: module.TermsPage })))
 const DashboardPage = lazy(() => import("./pages/dashboard-page").then((module) => ({ default: module.DashboardPage })))
 const StudentsPage = lazy(() => import("./features/students/pages/students-page").then((module) => ({ default: module.StudentsPage })))
 const StudentProfilePage = lazy(() => import("./features/students/pages/student-profile-page").then((module) => ({ default: module.StudentProfilePage })))
@@ -37,6 +41,9 @@ export default function App() {
           path="/login"
           element={<LoginPage />}
         />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/forgot-password" element={<PasswordResetPage />} />
         <Route path="/reset-password" element={<PasswordResetPage />} />
 

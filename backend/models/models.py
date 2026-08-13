@@ -149,6 +149,12 @@ class User(Base):
 
     password_hash: Mapped[str]= mapped_column(String(255),nullable=False)
     token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    auth_provider: Mapped[str] = mapped_column(
+        String(30), default="password", nullable=False
+    )
+    google_subject: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True, index=True
+    )
 
     student_links: Mapped[list["StudentProfessional"]] = relationship(
     back_populates="user",

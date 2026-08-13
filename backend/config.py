@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     max_request_size_mb: int = 10
     log_level: str = "INFO"
     pilot_demo_mode: bool = False
+    self_registration_enabled: bool = False
+    google_client_id: str | None = None
 
     @property
     def allowed_origins(self) -> list[str]:

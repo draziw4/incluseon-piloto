@@ -32,9 +32,13 @@ async def pilot_security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-        "script-src 'self'; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; "
+        "default-src 'self'; img-src 'self' data: https://*.gstatic.com; "
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; "
+        "script-src 'self' https://accounts.google.com/gsi/client; "
+        "connect-src 'self' https://accounts.google.com/gsi/; "
+        "frame-src https://accounts.google.com/gsi/; font-src 'self'; frame-ancestors 'none'; "
         "base-uri 'self'; form-action 'self'"
     )
     if request.url.path.startswith("/assets/"):
