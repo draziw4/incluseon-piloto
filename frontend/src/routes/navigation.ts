@@ -6,11 +6,13 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  MessageSquareText,
   Sparkles,
   Target,
   Users,
   type LucideIcon
 } from "lucide-react"
+import { isPilotMode } from "@/config/pilot"
 
 export type NavigationItem = {
   label: string
@@ -28,7 +30,10 @@ export const navigationItems: NavigationItem[] = [
   { label: "PEI e Metas", path: "/goals", icon: Target },
   { label: "Estudos de Caso IA", path: "/case-studies", icon: Sparkles },
   { label: "Relatórios", path: "/reports", icon: FileText },
-  { label: "Analytics", path: "/analytics", icon: BarChart3 }
+  { label: "Analytics", path: "/analytics", icon: BarChart3 },
+  ...(isPilotMode
+    ? [{ label: "Feedback do piloto", path: "/pilot-feedback", icon: MessageSquareText }]
+    : [])
 ]
 
 export function getNavigationTitle(pathname: string) {
@@ -42,6 +47,7 @@ export function getNavigationTitle(pathname: string) {
 
   if (pathname.startsWith("/students/")) return "Perfil do aluno"
   if (pathname === "/settings") return "Configurações"
+  if (pathname === "/pilot-feedback") return "Feedback do piloto"
 
   return matchingItem?.label ?? "IncluseON"
 }

@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"
 
 import { useAuth } from "../features/auth/hooks/use-auth"
 import { getNavigationTitle } from "../routes/navigation"
+import { isPilotMode } from "../config/pilot"
 
 export function Navbar() {
   const { user } = useAuth()
@@ -21,7 +22,7 @@ export function Navbar() {
 
       <div className="flex items-center gap-3">
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-          Ativo
+          {isPilotMode ? "Piloto" : "Ativo"}
         </span>
 
         <button type="button" aria-label="Notificações" title="Notificações" className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 text-zinc-500 hover:bg-blue-50 hover:text-blue-700">

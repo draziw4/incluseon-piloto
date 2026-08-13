@@ -1,5 +1,6 @@
 from pathlib import Path
 from html import escape
+from io import BytesIO
 
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -44,8 +45,31 @@ def generate_case_study_pdf(
     # PDF CONFIG
     # =====================================
 
+    _build_case_study_pdf(
+        destination=pdf_path,
+        student_name=student_name,
+        report_content=report_content,
+    )
+
+    stored_reference = store_report(Path(pdf_path))
+    if settings.storage_backend != "local":
+        Path(pdf_path).unlink(missing_ok=True)
+    return stored_reference
+
+
+def generate_case_study_pdf_bytes(student_name: str, report_content: str) -> bytes:
+    buffer = BytesIO()
+    _build_case_study_pdf(
+        destination=buffer,
+        student_name=student_name,
+        report_content=report_content,
+    )
+    return buffer.getvalue()
+
+
+def _build_case_study_pdf(destination, student_name: str, report_content: str) -> None:
     doc = SimpleDocTemplate(
-        pdf_path,
+        destination,
         pagesize=A4,
         rightMargin=54,
         leftMargin=54,
@@ -107,12 +131,6 @@ def generate_case_study_pdf(
     # =====================================
 
     doc.build(elements, onFirstPage=_draw_page, onLaterPages=_draw_page)
-
-    stored_reference = store_report(Path(pdf_path))
-    if settings.storage_backend != "local":
-        Path(pdf_path).unlink(missing_ok=True)
-    return stored_reference
-
 
 def _draw_page(canvas, doc):
     canvas.saveState()

@@ -9,6 +9,7 @@ import { lazy, Suspense } from "react"
 import "./index.css"
 import { ProtectedRoute } from "./routes/protected-route"
 import { DashboardLayout } from "./layouts/dashboard-layout"
+import { isPilotMode } from "./config/pilot"
 
 const LoginPage = lazy(() => import("./pages/login-page").then((module) => ({ default: module.LoginPage })))
 const DashboardPage = lazy(() => import("./pages/dashboard-page").then((module) => ({ default: module.DashboardPage })))
@@ -25,6 +26,7 @@ const GoalsPage = lazy(() => modulePages.then((module) => ({ default: module.Goa
 const CaseStudiesPage = lazy(() => modulePages.then((module) => ({ default: module.CaseStudiesPage })))
 const ReportsPage = lazy(() => modulePages.then((module) => ({ default: module.ReportsPage })))
 const AnalyticsPage = lazy(() => modulePages.then((module) => ({ default: module.AnalyticsPage })))
+const PilotFeedbackPage = lazy(() => import("./features/pilot-feedback/pages/pilot-feedback-page").then((module) => ({ default: module.PilotFeedbackPage })))
 
 export default function App() {
   return (
@@ -51,6 +53,7 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="pilot-feedback" element={isPilotMode ? <PilotFeedbackPage /> : <Navigate to="/" replace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

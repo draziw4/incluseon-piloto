@@ -20,6 +20,7 @@ from routes.appointments import router as appointments_router
 from routes.dashboard import router as dashboard_router
 from routes.student_goals import router as student_goals_router
 from routes.admin import router as admin_router
+from routes.pilot_feedback import router as pilot_feedback_router
 from config import settings
 from sqlalchemy import text
 import logging
@@ -62,7 +63,8 @@ async def operational_controls(request: Request, call_next):
     request_id = request_id or str(uuid.uuid4())
 
     host = request.headers.get("host", "").split(":", 1)[0]
-    if request.url.path not in {"/health", "/ready"} and host not in settings.trusted_hosts:
+    health_paths = {"/health", "/ready", "/api/health", "/api/ready"}
+    if request.url.path not in health_paths and host not in settings.trusted_hosts:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"detail": "Host inválido"},
@@ -133,6 +135,7 @@ app.include_router(appointments_router)
 app.include_router(dashboard_router)
 app.include_router(student_goals_router)
 app.include_router(admin_router)
+app.include_router(pilot_feedback_router)
 
 
 @app.get("/")

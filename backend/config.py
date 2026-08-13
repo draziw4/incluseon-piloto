@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     sentry_dsn: SecretStr | None = None
     max_request_size_mb: int = 10
     log_level: str = "INFO"
+    pilot_demo_mode: bool = False
 
     @property
     def allowed_origins(self) -> list[str]:

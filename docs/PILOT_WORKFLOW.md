@@ -10,7 +10,7 @@ Staging e producao devem usar bancos, buckets, segredos e chaves OpenAI separado
 
 ## Do feedback ao deploy
 
-1. O profissional abre o formulario `Feedback do piloto` sem nomes, telefones, diagnosticos ou capturas com dados pessoais.
+1. O profissional usa o botão `Enviar feedback` na própria tela, sem nomes, telefones, diagnósticos ou dados pessoais.
 2. O time classifica: incidente, defeito, melhoria ou duvida.
 3. Incidentes de seguranca interrompem o fluxo normal.
 4. A alteracao e implementada em branch curta com issue vinculada.
@@ -34,3 +34,7 @@ Staging e producao devem usar bancos, buckets, segredos e chaves OpenAI separado
 - Logs nao contem dados pessoais.
 - Tem caminho de rollback.
 - Documentacao do usuario foi atualizada quando necessario.
+
+## Piloto gratuito
+
+Para a apresentação externa temporária, use o Blueprint `render.pilot-free.yaml` e siga `docs/DEPLOY_PILOT_FREE.md`. Esse modo reúne frontend e API em um único serviço, utiliza somente dados sintéticos e substitui a geração externa de IA por um relatório demonstrativo identificado.

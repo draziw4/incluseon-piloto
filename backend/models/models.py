@@ -188,6 +188,30 @@ class PasswordResetToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship()
+
+
+class PilotFeedback(Base):
+    __tablename__ = "pilot_feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    page_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    category: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_result: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="received", index=True
+    )
+    admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    created_by: Mapped["User"] = relationship()
     
 
 

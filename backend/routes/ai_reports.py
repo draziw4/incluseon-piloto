@@ -30,6 +30,7 @@ from services.permissions_service import (
 from services.pdf.pdf_generator import (
     delete_generated_report,
     generate_case_study_pdf,
+    generate_case_study_pdf_bytes,
     read_generated_report
 )
 
@@ -146,24 +147,17 @@ async def download_ai_report(
 ):
     report = await get_ai_report_or_404(db, report_id)
 
-    await require_student_report_access(
+    student = await require_student_report_access(
         db=db,
         user=current_user,
         student_id=report.student_id
     )
 
-    if not report.pdf_path:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="PDF não disponível"
-        )
-
-    pdf_content = read_generated_report(report.pdf_path)
-
+    pdf_content = read_generated_report(report.pdf_path) if report.pdf_path else None
     if pdf_content is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Arquivo PDF não encontrado"
+        pdf_content = generate_case_study_pdf_bytes(
+            student_name=student.name,
+            report_content=report.content,
         )
 
     return Response(

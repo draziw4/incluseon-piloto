@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from schemas.ai_report import AIReportResponse, AIReportUpdate
-from services.pdf.pdf_generator import generate_case_study_pdf
+from services.pdf.pdf_generator import generate_case_study_pdf, generate_case_study_pdf_bytes
 
 
 class AIReportTests(unittest.TestCase):
@@ -51,6 +51,13 @@ class AIReportTests(unittest.TestCase):
                 self.assertEqual(pdf.read_bytes()[:4], b"%PDF")
             finally:
                 os.chdir(previous_directory)
+
+    def test_pdf_can_be_regenerated_without_persistent_storage(self):
+        pdf = generate_case_study_pdf_bytes(
+            student_name="Aluno Demonstração",
+            report_content="Conteúdo sintético para validação. " * 10,
+        )
+        self.assertEqual(pdf[:4], b"%PDF")
 
 
 if __name__ == "__main__":

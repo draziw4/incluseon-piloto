@@ -24,7 +24,7 @@ class AIReportResponse(BaseModel):
     @computed_field
     @property
     def pdf_available(self) -> bool:
-        return bool(self.pdf_path)
+        return bool(self.content)
 
     model_config = {
         "from_attributes": True
