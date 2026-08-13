@@ -86,6 +86,7 @@ export function StudentProfilePage() {
 
   const canManage = hasTool(user, "student_management") && (user?.role === "admin" || student.psychologist_id === user?.id);
   const currentUserLink = professionals?.find((professional) => professional.user_id === user?.id);
+  const canManageBehavior = hasTool(user, "behavior_entry") && (canManage || Boolean(currentUserLink?.can_register_aba));
   const canManageGoals = hasTool(user, "goals") && (canManage || Boolean(currentUserLink?.can_create_pei));
   const canManageTeam = hasTool(user, "team_management") && canManage;
 
@@ -160,7 +161,7 @@ export function StudentProfilePage() {
           {activeTab === "overview" && <StudentOverview student={student} />}
 
           {activeTab === "behavior" && (
-            <BehaviorRecordsPanel studentId={student.id.toString()} />
+            <BehaviorRecordsPanel studentId={student.id.toString()} canManage={canManageBehavior} />
           )}
 
           {activeTab === "assessments" && (

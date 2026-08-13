@@ -62,6 +62,7 @@ async def create_behavior_record(
 
     record = BehaviorRecord(
         student_id=student.id,
+        created_by_id=current_user.id,
         **data.model_dump()
     )
 

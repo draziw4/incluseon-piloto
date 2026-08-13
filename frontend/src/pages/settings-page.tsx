@@ -3,7 +3,13 @@ import { CheckCircle2, KeyRound, ShieldCheck, UserRound } from "lucide-react"
 
 import { api } from "@/api/client"
 import { useAuth } from "@/features/auth/hooks/use-auth"
-import { roleLabels, toolLabels, type ToolAccess } from "@/features/auth/access"
+import {
+  permissionLevelLabels,
+  roleDescriptions,
+  roleLabels,
+  toolLabels,
+  type ToolAccess,
+} from "@/features/auth/access"
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
 
 export function SettingsPage() {
@@ -46,13 +52,29 @@ export function SettingsPage() {
         <p className="mt-2 text-sm text-zinc-500">Gerencie sua conta e a segurança da sessão.</p>
       </section>
 
+      <section className="overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-700 to-indigo-700 p-6 text-white shadow-sm">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-white/15 p-3"><ShieldCheck size={26} /></div>
+            <div>
+              <p className="text-sm font-medium text-blue-100">Nível de permissão da conta</p>
+              <h2 className="mt-1 text-3xl font-bold">{user ? permissionLevelLabels[user.role] ?? user.role : ""}</h2>
+              <p className="mt-2 max-w-2xl text-sm text-blue-100">{user ? roleDescriptions[user.role] : ""}</p>
+            </div>
+          </div>
+          <span className="w-fit rounded-full bg-emerald-400/20 px-4 py-2 text-sm font-semibold text-emerald-50 ring-1 ring-inset ring-emerald-200/40">
+            Perfil aprovado
+          </span>
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3 text-blue-700"><UserRound size={20} /><h2 className="font-bold text-blue-950">Sua conta</h2></div>
           <dl className="mt-5 space-y-4 text-sm">
             <div><dt className="text-zinc-500">Nome</dt><dd className="mt-1 font-medium text-blue-950">{user?.name}</dd></div>
             <div><dt className="text-zinc-500">E-mail</dt><dd className="mt-1 font-medium text-blue-950">{user?.email}</dd></div>
-            <div><dt className="text-zinc-500">Perfil aprovado</dt><dd className="mt-1 font-medium text-blue-950">{user ? roleLabels[user.role] ?? user.role : ""}</dd></div>
+            <div><dt className="text-zinc-500">Função profissional</dt><dd className="mt-1 font-medium text-blue-950">{user ? roleLabels[user.role] ?? user.role : ""}</dd></div>
             {user?.credential_reference ? <div><dt className="text-zinc-500">Identificação profissional</dt><dd className="mt-1 font-medium text-blue-950">{user.credential_reference}</dd></div> : null}
           </dl>
         </div>

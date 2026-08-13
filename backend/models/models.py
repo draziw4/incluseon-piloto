@@ -387,6 +387,14 @@ class BehaviorRecord(Base):
         back_populates="behavior_records"
     )
 
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    created_by: Mapped["User | None"] = relationship()
+
     # =====================================
     # ABA RECORD
     # =====================================

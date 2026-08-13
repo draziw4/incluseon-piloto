@@ -12,6 +12,7 @@ from typing import Annotated
 
 from database import get_db
 from access_policy import (
+    STUDENT_ROLE_FOR_USER_ROLE,
     STUDENT_PERMISSION_TO_TOOL,
     ToolAccess,
     normalize_student_permissions,
@@ -122,6 +123,13 @@ async def add_student_professional(
             detail="Somente profissionais ativos podem ser vinculados ao aluno",
         )
 
+    expected_student_role = STUDENT_ROLE_FOR_USER_ROLE.get(user_to_link.role)
+    if expected_student_role != data.role_in_student:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O papel no aluno deve corresponder ao perfil profissional aprovado",
+        )
+
     existing_result = await db.execute(
         select(StudentProfessional).where(
             StudentProfessional.student_id == student_id,
@@ -217,6 +225,12 @@ async def update_student_professional(
             detail="Vínculo não encontrado"
         )
 
+    if link.role_in_student == StudentProfessionalRole.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O vínculo do responsável principal é gerenciado pelo cadastro do aluno",
+        )
+
     update_data = data.model_dump(
         exclude_unset=True
     )
@@ -233,6 +247,13 @@ async def update_student_professional(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuário profissional não encontrado",
+        )
+
+    expected_student_role = STUDENT_ROLE_FOR_USER_ROLE.get(linked_user.role)
+    if expected_student_role != link.role_in_student:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O papel no aluno deve corresponder ao perfil profissional aprovado",
         )
 
     normalized_permissions = normalize_student_permissions(
@@ -273,11 +294,18 @@ async def remove_student_professional(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_tool(ToolAccess.TEAM_MANAGEMENT))]
 ):
-    await require_student_access(
-        db=db,
-        user=current_user,
-        student_id=student_id
-    )
+    student = await db.get(Student, student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aluno não encontrado",
+        )
+
+    if student.psychologist_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sem permissão para remover profissionais",
+        )
 
     link = await db.get(
         StudentProfessional,
@@ -288,6 +316,12 @@ async def remove_student_professional(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Vínculo não encontrado"
+        )
+
+    if link.role_in_student == StudentProfessionalRole.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O responsável principal não pode ser removido da equipe",
         )
 
     await db.delete(link)

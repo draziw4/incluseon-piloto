@@ -10,21 +10,16 @@ from services.ai_usage_service import count_user_reports_this_month
 
 from models.models import (
     Student,
-    Assessment,
-    BehaviorRecord,
     AIReport,
     User
 )
 
 from fastapi import HTTPException
 
-from services.analytics_service import (
-    get_behavior_analytics_for_student
-)
-
 from services.ai.prompt_builder import (
     build_case_study_prompt
 )
+from services.ai.case_context import get_case_study_context
 
 from services.ai.providers.openai_provider import (
     generate_text
@@ -88,42 +83,11 @@ def generate_case_study_task(
                 raise Exception(
                     error.detail
                 )
-            assessments_result = await db.execute(
-                select(Assessment)
-                .where(Assessment.student_id == student.id)
-                .order_by(Assessment.created_at.desc())
-                .limit(3)
-            )
-
-            assessments = (
-                assessments_result
-                .scalars()
-                .all()
-            )
-
-            behavior_result = await db.execute(
-                select(BehaviorRecord)
-                .where(BehaviorRecord.student_id == student.id)
-                .order_by(BehaviorRecord.created_at.desc())
-                .limit(10)
-            )
-
-            behavior_records = (
-                behavior_result
-                .scalars()
-                .all()
-            )
-
-            analytics = await get_behavior_analytics_for_student(
-                db=db,
-                student_id=student.id
-            )
+            context = await get_case_study_context(db, student.id)
 
             prompt = build_case_study_prompt(
                 student=student,
-                assessments=assessments,
-                behavior_records=behavior_records,
-                analytics=analytics
+                **context,
             )
 
             ai_response = await generate_text(

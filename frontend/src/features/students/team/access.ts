@@ -12,7 +12,7 @@ export type StudentPermissionKey =
 
 export const studentPermissionTools: Record<StudentPermissionKey, ToolAccess> = {
   can_view: "students",
-  can_register_aba: "behavior_records",
+  can_register_aba: "behavior_entry",
   can_create_assessment: "assessments",
   can_create_pei: "goals",
   can_generate_ai_report: "ai_case_studies",

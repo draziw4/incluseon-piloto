@@ -17,7 +17,7 @@ from sqlalchemy import (
 from typing import Annotated
 
 from database import get_db
-from access_policy import ToolAccess
+from access_policy import STUDENT_PERMISSION_TO_TOOL, ToolAccess, normalize_student_permissions
 
 from dependencies import get_current_user
 from permissions import require_tool
@@ -80,16 +80,15 @@ async def create_student(
 
     await db.flush()
 
+    owner_permissions = normalize_student_permissions(
+        current_user.role,
+        {permission: True for permission in STUDENT_PERMISSION_TO_TOOL},
+    )
     professional_link = StudentProfessional(
         student_id=student.id,
         user_id=current_user.id,
         role_in_student=StudentProfessionalRole.OWNER,
-        can_view=True,
-        can_register_aba=True,
-        can_create_assessment=True,
-        can_create_pei=True,
-        can_generate_ai_report=True,
-        can_view_reports=True
+        **owner_permissions,
     )
 
     db.add(professional_link)

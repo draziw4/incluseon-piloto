@@ -1,9 +1,14 @@
 import { Activity, BarChart3, Brain, ClipboardList, FileText, Sparkles, Target } from "lucide-react"
 
 import { ResourceHubPage } from "./resource-hub-page"
+import { hasTool } from "@/features/auth/access"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 
 export function BehaviorRecordsPage() {
-  return <ResourceHubPage title="Registros ABA" eyebrow="Acompanhamento comportamental" description="Registre antecedentes, comportamentos, consequências e estratégias utilizadas. Os registros pertencem ao contexto de um aluno, por isso a seleção acontece antes da edição." icon={Activity} tab="behavior" actionLabel="Ver registros" emptyHint="Escolha o aluno cujos registros comportamentais deseja acompanhar." />
+  const { user } = useAuth()
+  const canEnterRecords = hasTool(user, "behavior_entry")
+
+  return <ResourceHubPage title="Registros ABA" eyebrow="Acompanhamento comportamental" description={canEnterRecords ? "Registre antecedentes, comportamentos, consequências e estratégias utilizadas. Os registros pertencem ao contexto de um aluno, por isso a seleção acontece antes da edição." : "Acompanhe os registros inseridos pelos profissionais vinculados a cada aluno, sem alterar os dados de origem."} icon={Activity} tab="behavior" actionLabel={canEnterRecords ? "Ver e registrar" : "Acompanhar registros"} emptyHint="Escolha o aluno cujos registros comportamentais deseja acompanhar." />
 }
 
 export function AssessmentsPage() {

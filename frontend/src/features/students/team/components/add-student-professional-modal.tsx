@@ -173,9 +173,13 @@ export function AddStudentProfessionalModal({
                     key={user.id}
                     type="button"
                     onClick={() => {
+                      const studentRole = studentRoleForUserRole(user.role);
                       setSelectedUser(user);
                       setUserSearch(`${user.name} — ${user.email}`);
-                      if (role) applyRolePreset(role, user);
+                      if (studentRole) {
+                        setValue("role_in_student", studentRole);
+                        applyRolePreset(studentRole, user);
+                      }
                     }}
                     className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-blue-50"
                   >
@@ -229,14 +233,17 @@ export function AddStudentProfessionalModal({
 
             <select
               {...register("role_in_student")}
+              value={role ?? ""}
+              aria-disabled={Boolean(selectedUser)}
               onChange={(event) => {
+                if (selectedUser) return;
                 const value = event.target
                   .value as AddStudentProfessionalData["role_in_student"];
 
                 setValue("role_in_student", value);
                 applyRolePreset(value);
               }}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+              className={`w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500 ${selectedUser ? "cursor-not-allowed bg-zinc-50 text-zinc-600" : ""}`}
             >
               <option value="">Selecione</option>
 
@@ -259,7 +266,9 @@ export function AddStudentProfessionalModal({
 
             {role && (
               <p className="mt-2 text-xs text-blue-600">
-                As permissões foram sugeridas com base no papel selecionado.
+                {selectedUser
+                  ? "O papel corresponde ao nível profissional aprovado desta conta."
+                  : "As permissões serão sugeridas com base no papel selecionado."}
               </p>
             )}
           </div>
@@ -352,10 +361,23 @@ function formatUserRole(role: string) {
     psychologist: "Psicólogo",
     supervisor: "Supervisor",
     aee: "AEE",
-    support_professional: "Apoio",
+    support_professional: "PA — Profissional de apoio",
     school: "Escola",
     guardian: "Responsável",
   };
 
   return labels[role] || role;
+}
+
+function studentRoleForUserRole(role: string): AddStudentProfessionalData["role_in_student"] | null {
+  const roles: Record<string, AddStudentProfessionalData["role_in_student"]> = {
+    psychologist: "psychologist",
+    supervisor: "supervisor",
+    aee: "aee",
+    support_professional: "support",
+    school: "viewer",
+    guardian: "viewer",
+  }
+
+  return roles[role] ?? null
 }

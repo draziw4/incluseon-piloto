@@ -1,6 +1,6 @@
 from enum import Enum
 
-from models.models import UserRole
+from models.models import StudentProfessionalRole, UserRole
 
 
 class ToolAccess(str, Enum):
@@ -9,6 +9,7 @@ class ToolAccess(str, Enum):
     STUDENT_MANAGEMENT = "student_management"
     APPOINTMENTS = "appointments"
     BEHAVIOR_RECORDS = "behavior_records"
+    BEHAVIOR_ENTRY = "behavior_entry"
     ASSESSMENTS = "assessments"
     INTERVIEWS = "interviews"
     TIMELINE = "timeline"
@@ -34,8 +35,8 @@ ROLE_LABELS = {
     UserRole.ADMIN: "Administrador",
     UserRole.PSYCHOLOGIST: "Psicólogo(a)",
     UserRole.SUPERVISOR: "Supervisor(a)",
-    UserRole.AEE: "Profissional de AEE",
-    UserRole.SUPPORT_PROFESSIONAL: "Profissional de apoio",
+    UserRole.AEE: "AEE — Atendimento Educacional Especializado",
+    UserRole.SUPPORT_PROFESSIONAL: "PA — Profissional de apoio",
     UserRole.SCHOOL: "Equipe escolar",
     UserRole.GUARDIAN: "Responsável",
 }
@@ -47,6 +48,7 @@ _FULL_PROFESSIONAL_ACCESS = frozenset(
         ToolAccess.STUDENT_MANAGEMENT,
         ToolAccess.APPOINTMENTS,
         ToolAccess.BEHAVIOR_RECORDS,
+        ToolAccess.BEHAVIOR_ENTRY,
         ToolAccess.ASSESSMENTS,
         ToolAccess.INTERVIEWS,
         ToolAccess.TIMELINE,
@@ -67,12 +69,17 @@ ROLE_TOOL_ACCESS: dict[UserRole, frozenset[ToolAccess]] = {
         {
             ToolAccess.DASHBOARD,
             ToolAccess.STUDENTS,
+            ToolAccess.STUDENT_MANAGEMENT,
             ToolAccess.APPOINTMENTS,
+            ToolAccess.BEHAVIOR_RECORDS,
             ToolAccess.ASSESSMENTS,
             ToolAccess.INTERVIEWS,
+            ToolAccess.TIMELINE,
             ToolAccess.GOALS,
             ToolAccess.AI_CASE_STUDIES,
             ToolAccess.REPORTS,
+            ToolAccess.ANALYTICS,
+            ToolAccess.TEAM_MANAGEMENT,
             ToolAccess.PILOT_FEEDBACK,
         }
     ),
@@ -82,6 +89,7 @@ ROLE_TOOL_ACCESS: dict[UserRole, frozenset[ToolAccess]] = {
             ToolAccess.STUDENTS,
             ToolAccess.APPOINTMENTS,
             ToolAccess.BEHAVIOR_RECORDS,
+            ToolAccess.BEHAVIOR_ENTRY,
             ToolAccess.PILOT_FEEDBACK,
         }
     ),
@@ -104,11 +112,20 @@ ROLE_TOOL_ACCESS: dict[UserRole, frozenset[ToolAccess]] = {
 
 STUDENT_PERMISSION_TO_TOOL = {
     "can_view": ToolAccess.STUDENTS,
-    "can_register_aba": ToolAccess.BEHAVIOR_RECORDS,
+    "can_register_aba": ToolAccess.BEHAVIOR_ENTRY,
     "can_create_assessment": ToolAccess.ASSESSMENTS,
     "can_create_pei": ToolAccess.GOALS,
     "can_generate_ai_report": ToolAccess.AI_CASE_STUDIES,
     "can_view_reports": ToolAccess.REPORTS,
+}
+
+STUDENT_ROLE_FOR_USER_ROLE = {
+    UserRole.PSYCHOLOGIST: StudentProfessionalRole.PSYCHOLOGIST,
+    UserRole.SUPERVISOR: StudentProfessionalRole.SUPERVISOR,
+    UserRole.AEE: StudentProfessionalRole.AEE,
+    UserRole.SUPPORT_PROFESSIONAL: StudentProfessionalRole.SUPPORT,
+    UserRole.SCHOOL: StudentProfessionalRole.VIEWER,
+    UserRole.GUARDIAN: StudentProfessionalRole.VIEWER,
 }
 
 

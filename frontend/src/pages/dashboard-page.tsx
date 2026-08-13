@@ -140,8 +140,8 @@ export function DashboardPage() {
 
             {hasTool(user, "behavior_records") ? <QuickAction
               icon={<Activity size={20} />}
-              title="Registro ABA"
-              subtitle="Ocorrência"
+              title={hasTool(user, "behavior_entry") ? "Registro ABA" : "Acompanhamento"}
+              subtitle={hasTool(user, "behavior_entry") ? "Nova ocorrência" : "Consultar registros"}
               color="bg-emerald-50 text-emerald-700"
               to="/behavior-records"
             /> : null}

@@ -42,7 +42,7 @@ export function EditStudentProfessionalModal({
 }: Props) {
   const mutation = useUpdateStudentProfessional(studentId);
 
-  const { register, handleSubmit, reset, setValue } = useForm<FormData>();
+  const { register, handleSubmit, reset } = useForm<FormData>();
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,13 +60,6 @@ export function EditStudentProfessionalModal({
       reset(normalized);
     }
   }, [professional, reset]);
-
-  function applyRolePreset(selectedRole: StudentProfessionalRole) {
-    const preset = getStudentRolePreset(selectedRole, professional?.user?.allowed_tools)
-    for (const [permission, value] of Object.entries(preset)) {
-      setValue(permission as StudentPermissionKey, value)
-    }
-  }
 
   async function onSubmit(data: FormData) {
     if (!professional) return;
@@ -97,7 +90,7 @@ export function EditStudentProfessionalModal({
           </h2>
 
           <p className="text-sm text-zinc-500">
-            Altere o papel e as permissões deste profissional no aluno.
+            Altere as permissões deste profissional no aluno. O papel é definido pelo perfil aprovado da conta.
           </p>
         </div>
 
@@ -126,28 +119,10 @@ export function EditStudentProfessionalModal({
               Papel no aluno
             </label>
 
-            <select
-              {...register("role_in_student")}
-              onChange={(event) => {
-                const value = event.target.value as StudentProfessionalRole;
-
-                setValue("role_in_student", value);
-                applyRolePreset(value);
-              }}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
-            >
-              <option value="owner">Responsável principal</option>
-
-              <option value="support">Profissional de apoio</option>
-
-              <option value="aee">Profissional AEE</option>
-
-              <option value="psychologist">Psicólogo</option>
-
-              <option value="supervisor">Supervisor</option>
-
-              <option value="viewer">Visualizador</option>
-            </select>
+            <input type="hidden" {...register("role_in_student")} />
+            <div className="rounded-xl border border-blue-100 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700">
+              {formatStudentRole(professional.role_in_student)}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -233,4 +208,17 @@ function PermissionCheckbox({ label, inputProps, disabled }: PermissionCheckboxP
       />
     </label>
   );
+}
+
+function formatStudentRole(role: StudentProfessionalRole) {
+  const labels: Record<StudentProfessionalRole, string> = {
+    owner: "Responsável principal",
+    support: "PA — Profissional de apoio",
+    aee: "AEE — Atendimento Educacional Especializado",
+    psychologist: "Psicólogo",
+    supervisor: "Supervisor",
+    viewer: "Visualizador",
+  }
+
+  return labels[role]
 }

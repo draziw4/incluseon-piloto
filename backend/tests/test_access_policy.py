@@ -15,19 +15,23 @@ from schemas.user import AdminUserReview, UserResponse
 class AccessPolicyTests(unittest.TestCase):
     def test_support_professional_only_has_operational_support_tools(self):
         self.assertTrue(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.BEHAVIOR_RECORDS))
+        self.assertTrue(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.BEHAVIOR_ENTRY))
         self.assertTrue(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.APPOINTMENTS))
         self.assertFalse(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.ASSESSMENTS))
         self.assertFalse(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.AI_CASE_STUDIES))
         self.assertFalse(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.TEAM_MANAGEMENT))
         self.assertFalse(role_has_tool(UserRole.SUPPORT_PROFESSIONAL, ToolAccess.STUDENT_MANAGEMENT))
 
-    def test_aee_can_plan_but_cannot_manage_students_or_aba(self):
+    def test_aee_can_manage_students_and_monitor_team_data_without_entering_aba(self):
         self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.ASSESSMENTS))
         self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.GOALS))
         self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.REPORTS))
-        self.assertFalse(role_has_tool(UserRole.AEE, ToolAccess.BEHAVIOR_RECORDS))
-        self.assertFalse(role_has_tool(UserRole.AEE, ToolAccess.ANALYTICS))
-        self.assertFalse(role_has_tool(UserRole.AEE, ToolAccess.STUDENT_MANAGEMENT))
+        self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.BEHAVIOR_RECORDS))
+        self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.ANALYTICS))
+        self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.TIMELINE))
+        self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.STUDENT_MANAGEMENT))
+        self.assertTrue(role_has_tool(UserRole.AEE, ToolAccess.TEAM_MANAGEMENT))
+        self.assertFalse(role_has_tool(UserRole.AEE, ToolAccess.BEHAVIOR_ENTRY))
 
     def test_student_permissions_are_clamped_by_global_profile(self):
         requested = {
@@ -48,6 +52,14 @@ class AccessPolicyTests(unittest.TestCase):
         self.assertFalse(normalized["can_create_pei"])
         self.assertFalse(normalized["can_generate_ai_report"])
         self.assertFalse(normalized["can_view_reports"])
+
+    def test_aee_cannot_receive_aba_entry_permission_from_student_link(self):
+        normalized = normalize_student_permissions(
+            UserRole.AEE,
+            {"can_view": True, "can_register_aba": True},
+        )
+        self.assertTrue(normalized["can_view"])
+        self.assertFalse(normalized["can_register_aba"])
 
     def test_admin_is_the_only_professional_review_profile(self):
         for role in UserRole:

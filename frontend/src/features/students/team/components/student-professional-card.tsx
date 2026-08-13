@@ -87,7 +87,7 @@ export function StudentProfessionalCard({
         />
       </div>
 
-      {canManage ? <div className="mt-5 flex flex-col gap-3 border-t border-blue-50 pt-4 md:flex-row md:justify-end">
+      {canManage && professional.role_in_student !== "owner" ? <div className="mt-5 flex flex-col gap-3 border-t border-blue-50 pt-4 md:flex-row md:justify-end">
         <button
           type="button"
           onClick={() => onEdit(professional)}

@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from uuid import uuid4
 
 from fastapi import (
@@ -8,7 +7,6 @@ from fastapi import (
     status
 )
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from typing import Annotated
@@ -38,6 +36,13 @@ from services.ai_usage_service import (
 from services.redis_service import register_task_owner
 from config import settings
 from services.pdf.pdf_generator import delete_generated_report, generate_case_study_pdf
+from services.ai.case_context import get_case_study_context
+from services.ai.prompt_builder import (
+    format_appointments,
+    format_assessments,
+    format_behavior_records,
+    format_goals,
+)
 
 
 router = APIRouter(
@@ -71,42 +76,6 @@ async def generate_ai_case_study(
     )
 
     # =====================================
-    # CHECK RECENT REPORT
-    # Evita gerar relatório repetido
-    # =====================================
-
-    recent_limit = datetime.utcnow() - timedelta(
-        hours=24
-    )
-
-    recent_report_result = await db.execute(
-        select(AIReport)
-        .where(
-            AIReport.student_id == student.id,
-            AIReport.created_by_id == current_user.id,
-            AIReport.report_type == "case_study",
-            AIReport.created_at >= recent_limit
-        )
-        .order_by(
-            AIReport.created_at.desc()
-        )
-    )
-
-    recent_report = (
-        recent_report_result
-        .scalars()
-        .first()
-    )
-
-    if recent_report:
-        return {
-            "message": "Relatório recente encontrado",
-            "task_id": None,
-            "report_id": recent_report.id,
-            "already_generated": True
-        }
-
-    # =====================================
     # CHECK MONTHLY LIMIT
     # =====================================
 
@@ -124,7 +93,8 @@ async def generate_ai_case_study(
         )
 
     if settings.pilot_demo_mode:
-        report_content = build_pilot_demo_report(student.name)
+        context = await get_case_study_context(db, student.id)
+        report_content = build_pilot_demo_report(student.name, context)
         pdf_path = generate_case_study_pdf(
             student_name=student.name,
             report_content=report_content,
@@ -175,25 +145,42 @@ async def generate_ai_case_study(
     }
 
 
-def build_pilot_demo_report(student_name: str) -> str:
+def build_pilot_demo_report(student_name: str, context: dict) -> str:
+    assessments = context["assessments"]
+    behavior_records = context["behavior_records"]
+    goals = context["goals"]
+    appointments = context["appointments"]
+    analytics = context["analytics"]
+
     return f"""Estudo de caso demonstrativo — {student_name}
 
 Aviso de validação
 
-Este conteúdo foi produzido pelo modo demonstrativo local do piloto, sem envio de dados a uma inteligência artificial externa. Ele existe para validar o fluxo de revisão profissional, edição, histórico e exportação em PDF.
+Este conteúdo foi produzido pelo modo demonstrativo local do piloto, sem envio de dados a uma inteligência artificial externa. Ele consolida os dados reais registrados para este aluno pelos profissionais vinculados e permite validar revisão, histórico e exportação em PDF.
 
-1. Síntese do acompanhamento
+1. Fontes consolidadas
 
-Os registros sintéticos indicam que o estudante responde melhor a atividades estruturadas, instruções objetivas e recursos visuais. Mudanças inesperadas e excesso de estímulos podem exigir maior mediação da equipe.
+Registros de acompanhamento: {analytics["records_count"]}
+Avaliações e entrevistas: {len(assessments)}
+Metas e itens de PEI: {len(goals)}
+Atendimentos: {len(appointments)}
 
-2. Padrões observados
+2. Registros recentes da equipe
 
-Os eventos demonstrativos apontam maior intensidade em transições, ambientes ruidosos e tarefas extensas. Estratégias de antecipação, divisão de tarefas e pausa planejada apresentaram resposta positiva no cenário simulado.
+{format_behavior_records(behavior_records[:10])}
 
-3. Estratégias para validação
+3. Avaliações e entrevistas
 
-A equipe pode avaliar o uso de rotina visual, instruções curtas, reforço positivo e registro contínuo dos resultados. Toda recomendação deve ser revisada e adaptada por profissional habilitado.
+{format_assessments(assessments[:10])}
 
-4. Próximos passos
+4. PEI e metas
 
-Revise este texto, altere os trechos necessários, salve uma nova versão e baixe o PDF. A geração real com IA permanece fora deste piloto gratuito e só deve ser ativada com autorização, orçamento e revisão de privacidade."""
+{format_goals(goals[:20])}
+
+5. Atendimentos multiprofissionais
+
+{format_appointments(appointments[:20])}
+
+6. Próximos passos
+
+Revise a consolidação, registre as interpretações profissionais necessárias, salve uma nova versão e baixe o PDF. A análise textual com IA externa permanece desativada neste piloto gratuito e só deve ser ativada com autorização, orçamento e revisão de privacidade."""

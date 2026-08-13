@@ -4,8 +4,8 @@ import type { BehaviorRecord } from "../types/behavior-record"
 
 type Props = {
   record: BehaviorRecord
-  onEdit: () => void
-  onDelete: () => void
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 export function BehaviorRecordCard({ record, onEdit, onDelete }: Props) {
@@ -32,8 +32,8 @@ export function BehaviorRecordCard({ record, onEdit, onDelete }: Props) {
             Intensidade {record.intensity}/10
           </span>
         )}
-          <button type="button" onClick={onEdit} aria-label="Editar registro" className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>
-          <button type="button" onClick={onDelete} aria-label="Excluir registro" className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
+          {onEdit ? <button type="button" onClick={onEdit} aria-label="Editar registro" className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button> : null}
+          {onDelete ? <button type="button" onClick={onDelete} aria-label="Excluir registro" className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button> : null}
         </div>
       </div>
 

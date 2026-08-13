@@ -8,6 +8,7 @@ def format_behavior_records(records):
         lines.append(
             f"""
 - Data: {record.created_at.strftime("%d/%m/%Y")}
+  Profissional responsável pelo registro: {record.created_by.name if record.created_by else "Não identificado (registro anterior)"}
   Ambiente: {record.environment or "Não informado"}
   Antecedente: {record.antecedent}
   Comportamento: {record.behavior}
@@ -33,6 +34,7 @@ def format_assessments(assessments):
         lines.append(
             f"""
 - Data: {assessment.created_at.strftime("%d/%m/%Y")}
+  Profissional responsável: {assessment.psychologist.name if assessment.psychologist else "Não identificado"}
   Título: {assessment.title}
   Tipo: {assessment.assessment_type}
   Histórico: {data.get("student_history", "Não informado")}
@@ -45,6 +47,42 @@ def format_assessments(assessments):
         )
 
     return "\n".join(lines)
+
+
+def format_goals(goals):
+    if not goals:
+        return "Nenhuma meta ou item de PEI encontrado."
+
+    return "\n".join(
+        f"""
+- Meta: {goal.title}
+  Área: {goal.area}
+  Status: {goal.status.value}
+  Progresso: {goal.progress}%
+  Evidências: {goal.evidence_notes or "Não informadas"}
+  Profissional responsável: {goal.created_by.name if goal.created_by else "Não identificado"}
+"""
+        for goal in goals
+    )
+
+
+def format_appointments(appointments):
+    if not appointments:
+        return "Nenhum atendimento encontrado."
+
+    return "\n".join(
+        f"""
+- Data: {appointment.scheduled_at.strftime("%d/%m/%Y")}
+  Tipo: {appointment.appointment_type.value}
+  Status: {appointment.status.value}
+  Objetivo: {appointment.objective or "Não informado"}
+  Síntese: {appointment.summary or "Não informada"}
+  Observações: {appointment.observations or "Não informadas"}
+  Próximos passos: {appointment.next_steps or "Não informados"}
+  Profissional responsável: {appointment.professional.name if appointment.professional else "Não identificado"}
+"""
+        for appointment in appointments
+    )
 
 
 def format_boolean(value):
@@ -61,7 +99,9 @@ def build_case_study_prompt(
     student,
     assessments,
     behavior_records,
-    analytics
+    goals,
+    appointments,
+    analytics,
 ):
     recent_behavior_records = behavior_records[:10]
     recent_assessments = assessments[:3]
@@ -101,6 +141,12 @@ Estratégia mais eficaz registrada: {analytics["most_effective_strategy"]}
 Últimas avaliações e entrevistas:
 {format_assessments(recent_assessments)}
 
+Metas e itens de PEI:
+{format_goals(goals)}
+
+Atendimentos registrados pela equipe vinculada:
+{format_appointments(appointments)}
+
 Gere um estudo de caso com as seções:
 
 1. Resumo do perfil do aluno
@@ -109,8 +155,9 @@ Gere um estudo de caso com as seções:
 4. Possíveis hipóteses funcionais, sem diagnóstico
 5. Estratégias que parecem favorecer o manejo
 6. Pontos de atenção
-7. Recomendações iniciais para acompanhamento
-8. Próximos passos sugeridos
+7. Evolução das metas e do acompanhamento multiprofissional
+8. Recomendações iniciais para acompanhamento
+9. Próximos passos sugeridos
 
 Limite o relatório a aproximadamente 900 palavras.
 """

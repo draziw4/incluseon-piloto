@@ -11,9 +11,10 @@ import { useQueryClient } from "@tanstack/react-query"
 
 type Props = {
   studentId: string
+  canManage: boolean
 }
 
-export function BehaviorRecordsPanel({ studentId }: Props) {
+export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
   const [openModal, setOpenModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState<BehaviorRecord | null>(null)
   const queryClient = useQueryClient()
@@ -43,13 +44,13 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
           </p>
         </div>
 
-        <button
+        {canManage ? <button
           onClick={() => { setEditingRecord(null); setOpenModal(true) }}
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
           Novo registro
-        </button>
+        </button> : <span className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">Acesso para acompanhamento</span>}
       </div>
 
       {isLoading && (
@@ -70,8 +71,8 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
             <BehaviorRecordCard
               key={record.id}
               record={record}
-              onEdit={() => { setEditingRecord(record); setOpenModal(true) }}
-              onDelete={() => void deleteRecord(record)}
+              onEdit={canManage ? () => { setEditingRecord(record); setOpenModal(true) } : undefined}
+              onDelete={canManage ? () => void deleteRecord(record) : undefined}
             />
           ))}
         </div>
@@ -91,21 +92,21 @@ export function BehaviorRecordsPanel({ studentId }: Props) {
             Registre o primeiro evento comportamental para começar a identificar padrões, gatilhos e estratégias eficazes.
           </p>
 
-          <button
+          {canManage ? <button
             onClick={() => { setEditingRecord(null); setOpenModal(true) }}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
             + Criar primeiro registro
-          </button>
+          </button> : <p className="mt-4 text-sm font-medium text-blue-700">Os profissionais vinculados ainda não adicionaram registros.</p>}
         </div>
       )}
 
-      <CreateBehaviorRecordModal
+      {canManage ? <CreateBehaviorRecordModal
         studentId={studentId}
         open={openModal}
         onClose={() => { setOpenModal(false); setEditingRecord(null) }}
         record={editingRecord}
-      />
+      /> : null}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 export type BehaviorRecord = {
   id: number
   student_id: number
+  created_by_id?: number | null
 
   antecedent: string
   behavior: string

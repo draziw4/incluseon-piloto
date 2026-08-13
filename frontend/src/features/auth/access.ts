@@ -6,6 +6,7 @@ export type ToolAccess =
   | "student_management"
   | "appointments"
   | "behavior_records"
+  | "behavior_entry"
   | "assessments"
   | "interviews"
   | "timeline"
@@ -21,10 +22,30 @@ export const roleLabels: Record<string, string> = {
   admin: "Administrador",
   psychologist: "Psicólogo(a)",
   supervisor: "Supervisor(a)",
-  aee: "Profissional de AEE",
-  support_professional: "Profissional de apoio",
+  aee: "AEE — Atendimento Educacional Especializado",
+  support_professional: "PA — Profissional de apoio",
   school: "Equipe escolar",
   guardian: "Responsável",
+}
+
+export const permissionLevelLabels: Record<string, string> = {
+  admin: "Administrador",
+  psychologist: "Psicólogo",
+  supervisor: "Supervisor",
+  aee: "AEE",
+  support_professional: "PA",
+  school: "Equipe escolar",
+  guardian: "Responsável",
+}
+
+export const roleDescriptions: Record<string, string> = {
+  admin: "Administra profissionais, perfis, permissões e todos os recursos do sistema.",
+  psychologist: "Realiza avaliações, registros técnicos, planos e relatórios dos alunos vinculados.",
+  supervisor: "Supervisiona o acompanhamento e acessa os recursos técnicos dos alunos vinculados.",
+  aee: "Cadastra alunos, vincula a equipe, acompanha os registros e consolida relatórios.",
+  support_professional: "Registra o acompanhamento cotidiano dos alunos aos quais foi vinculado.",
+  school: "Consulta informações escolares autorizadas dos alunos vinculados.",
+  guardian: "Consulta informações autorizadas do aluno sob sua responsabilidade.",
 }
 
 export const toolLabels: Record<ToolAccess, string> = {
@@ -32,7 +53,8 @@ export const toolLabels: Record<ToolAccess, string> = {
   students: "Visualizar alunos vinculados",
   student_management: "Cadastrar, editar e excluir alunos",
   appointments: "Atendimentos",
-  behavior_records: "Registros ABA",
+  behavior_records: "Consultar registros de acompanhamento",
+  behavior_entry: "Criar e atualizar registros de acompanhamento",
   assessments: "Avaliações",
   interviews: "Entrevistas",
   timeline: "Timeline clínica integrada",
