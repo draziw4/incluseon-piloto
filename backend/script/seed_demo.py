@@ -7,12 +7,10 @@ sys.path.append(str(BASE_DIR))
 
 from datetime import datetime, date, timedelta
 
-from passlib.context import CryptContext
-
 from sqlalchemy import select
 
 from database import AsyncSessionLocal
-from security import hash_password,verify_password
+from security import hash_password
 
 from models.models import (
     User,
