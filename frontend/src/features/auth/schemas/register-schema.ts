@@ -4,6 +4,14 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(3, "Informe seu nome completo").max(255),
     email: z.string().email("Digite um e-mail válido"),
+    requestedRole: z.enum(["psychologist", "supervisor", "aee", "support_professional"], {
+      message: "Selecione seu perfil profissional",
+    }),
+    credentialReference: z
+      .string()
+      .trim()
+      .min(3, "Informe seu registro, matrícula ou vínculo profissional")
+      .max(120),
     password: z
       .string()
       .min(12, "A senha precisa ter pelo menos 12 caracteres")

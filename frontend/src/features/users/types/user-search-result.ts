@@ -4,4 +4,5 @@ export type UserSearchResult = {
   name: string
   email: string
   role: string
+  allowed_tools: string[]
 }

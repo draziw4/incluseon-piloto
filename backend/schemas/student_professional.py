@@ -1,13 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
-from models.models import StudentProfessionalRole
+from access_policy import tools_for_role
+from models.models import StudentProfessionalRole, UserRole
 
 
 class LinkedUserResponse(BaseModel):
     id: int
     name: str
     email: str
-    role: str
+    role: UserRole
+    allowed_tools: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def populate_allowed_tools(self):
+        self.allowed_tools = tools_for_role(self.role)
+        return self
 
     model_config = {
         "from_attributes": True

@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 
 from dependencies import get_current_user
 
@@ -28,7 +30,8 @@ from schemas.analytics import (
 
 router = APIRouter(
     prefix="/analytics",
-    tags=["Analytics"]
+    tags=["Analytics"],
+    dependencies=[Depends(require_tool(ToolAccess.ANALYTICS))],
 )
 
 

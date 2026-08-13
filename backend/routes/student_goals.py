@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 from dependencies import get_current_user
 from models.models import StudentGoal, StudentGoalStatus, User
 from schemas.student_goal import (
@@ -17,7 +19,11 @@ from services.permissions_service import (
 )
 
 
-router = APIRouter(prefix="/students", tags=["Student Goals"])
+router = APIRouter(
+    prefix="/students",
+    tags=["Student Goals"],
+    dependencies=[Depends(require_tool(ToolAccess.GOALS))],
+)
 
 
 @router.get(

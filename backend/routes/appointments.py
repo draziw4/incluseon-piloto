@@ -13,6 +13,8 @@ from sqlalchemy.orm import selectinload
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 
 from dependencies import get_current_user
 
@@ -29,15 +31,13 @@ from schemas.appointment import (
     AppointmentResponse
 )
 
-from services.permissions_service import (
-    require_student_access,
-    require_student_permission
-)
+from services.permissions_service import require_student_access
 
 
 router = APIRouter(
     prefix="/appointments",
-    tags=["Appointments"]
+    tags=["Appointments"],
+    dependencies=[Depends(require_tool(ToolAccess.APPOINTMENTS))],
 )
 
 
@@ -64,20 +64,6 @@ async def create_appointment(
         user=current_user,
         student_id=data.student_id
     )
-
-    # Por enquanto, para criar atendimento,
-    # vamos permitir quem pode criar avaliação
-    # ou quem é responsável/admin.
-    if (
-        current_user.role != UserRole.ADMIN
-        and student.psychologist_id != current_user.id
-    ):
-        await require_student_permission(
-            db=db,
-            user=current_user,
-            student_id=data.student_id,
-            permission="can_create_assessment"
-        )
 
     appointment = Appointment(
         student_id=student.id,

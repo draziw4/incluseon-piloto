@@ -52,6 +52,13 @@ class UserRole(str, Enum):
     GUARDIAN = "guardian"
 
 
+class AccountStatus(str, Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    REJECTED = "rejected"
+    SUSPENDED = "suspended"
+
+
 
 
 class StudentProfessionalRole(str, Enum):
@@ -155,6 +162,26 @@ class User(Base):
     google_subject: Mapped[str | None] = mapped_column(
         String(255), unique=True, nullable=True, index=True
     )
+    account_status: Mapped[AccountStatus] = mapped_column(
+        SQLEnum(
+            AccountStatus,
+            name="account_statuses",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls],
+        ),
+        default=AccountStatus.ACTIVE,
+        nullable=False,
+    )
+    requested_role: Mapped[UserRole | None] = mapped_column(
+        SQLEnum(
+            UserRole,
+            name="user_roles",
+            values_callable=lambda enum_cls: [item.value for item in enum_cls],
+        ),
+        nullable=True,
+    )
+    credential_reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     student_links: Mapped[list["StudentProfessional"]] = relationship(
     back_populates="user",

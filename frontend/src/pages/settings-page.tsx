@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react"
-import { KeyRound, ShieldCheck, UserRound } from "lucide-react"
+import { CheckCircle2, KeyRound, ShieldCheck, UserRound } from "lucide-react"
 
 import { api } from "@/api/client"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { roleLabels, toolLabels, type ToolAccess } from "@/features/auth/access"
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
 
 export function SettingsPage() {
@@ -51,7 +52,8 @@ export function SettingsPage() {
           <dl className="mt-5 space-y-4 text-sm">
             <div><dt className="text-zinc-500">Nome</dt><dd className="mt-1 font-medium text-blue-950">{user?.name}</dd></div>
             <div><dt className="text-zinc-500">E-mail</dt><dd className="mt-1 font-medium text-blue-950">{user?.email}</dd></div>
-            <div><dt className="text-zinc-500">Perfil</dt><dd className="mt-1 font-medium capitalize text-blue-950">{user?.role?.replaceAll("_", " ")}</dd></div>
+            <div><dt className="text-zinc-500">Perfil aprovado</dt><dd className="mt-1 font-medium text-blue-950">{user ? roleLabels[user.role] ?? user.role : ""}</dd></div>
+            {user?.credential_reference ? <div><dt className="text-zinc-500">Identificação profissional</dt><dd className="mt-1 font-medium text-blue-950">{user.credential_reference}</dd></div> : null}
           </dl>
         </div>
 
@@ -67,6 +69,16 @@ export function SettingsPage() {
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-3 text-blue-700"><ShieldCheck size={20} /><h2 className="font-bold text-blue-950">Ferramentas liberadas para seu perfil</h2></div>
+        <p className="mt-2 text-sm text-zinc-500">Além deste nível global, o acesso aos dados de cada aluno depende do vínculo e das permissões definidas pela equipe responsável.</p>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {(user?.allowed_tools ?? []).filter((tool): tool is ToolAccess => tool in toolLabels).map((tool) => (
+            <div key={tool} className="flex items-center gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900"><CheckCircle2 size={18} className="shrink-0 text-emerald-600" />{toolLabels[tool]}</div>
+          ))}
+        </div>
       </section>
     </div>
   )

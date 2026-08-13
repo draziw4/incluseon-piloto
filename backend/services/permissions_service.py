@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from access_policy import STUDENT_PERMISSION_TO_TOOL, role_has_tool
 from models.models import (
     User,
     UserRole,
@@ -18,7 +19,6 @@ PERMISSION_MESSAGES = {
     "can_generate_ai_report": "Você não tem permissão para gerar relatório IA para este aluno.",
     "can_view_reports": "Você não tem permissão para visualizar relatórios deste aluno.",
 }
-
 
 async def get_student_or_404(
     db: AsyncSession,
@@ -126,6 +126,16 @@ async def require_student_permission(
 
     if user.role == UserRole.ADMIN:
         return student
+
+    required_tool = STUDENT_PERMISSION_TO_TOOL.get(permission)
+    if required_tool is not None and not role_has_tool(user.role, required_tool):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=PERMISSION_MESSAGES.get(
+                permission,
+                "Seu perfil profissional não possui acesso a esta ferramenta.",
+            ),
+        )
 
     if student.psychologist_id == user.id:
         return student

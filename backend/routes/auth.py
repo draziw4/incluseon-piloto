@@ -18,14 +18,17 @@ from security import (
     verify_password,
 )
 
-from models.models import PasswordResetToken, User, UserRole
+from access_policy import PUBLIC_PROFESSIONAL_ROLES, ROLE_LABELS
+from models.models import AccountStatus, PasswordResetToken, User, UserRole
 from schemas.token import Token,RefreshTokenRequest
 from schemas.user import (
     AuthCapabilities,
+    GoogleAuthResponse,
     GoogleCredentialRequest,
     PasswordResetConfirm,
     PasswordResetRequest,
     PublicRegistration,
+    RegistrationResponse,
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from services.redis_service import client as redis_client
@@ -51,6 +54,10 @@ async def auth_capabilities():
         registration_enabled=settings.self_registration_enabled,
         google_enabled=bool(settings.google_client_id),
         google_client_id=settings.google_client_id,
+        professional_roles=[
+            {"value": role.value, "label": ROLE_LABELS[role]}
+            for role in sorted(PUBLIC_PROFESSIONAL_ROLES, key=lambda item: ROLE_LABELS[item])
+        ],
     )
 
 
@@ -89,10 +96,13 @@ async def enforce_public_auth_rate_limit(
         ) from error
 
 
-@router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=RegistrationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def register_account(
     request: Request,
-    response: Response,
     data: PublicRegistration,
     db: AsyncSession = Depends(get_db),
 ):
@@ -116,7 +126,10 @@ async def register_account(
         name=data.name.strip(),
         email=data.email.lower(),
         password_hash=hash_password(data.password),
-        role=UserRole.PSYCHOLOGIST,
+        role=data.requested_role,
+        requested_role=data.requested_role,
+        credential_reference=data.credential_reference,
+        account_status=AccountStatus.PENDING,
         auth_provider="password",
     )
     db.add(user)
@@ -126,10 +139,13 @@ async def register_account(
         await db.rollback()
         raise HTTPException(status_code=409, detail="E-mail já cadastrado") from error
     await db.refresh(user)
-    return issue_session(request, response, user)
+    return RegistrationResponse(
+        account_status=user.account_status,
+        message="Cadastro enviado para verificação do administrador.",
+    )
 
 
-@router.post("/google", response_model=Token)
+@router.post("/google", response_model=GoogleAuthResponse)
 async def google_login(
     request: Request,
     response: Response,
@@ -169,17 +185,25 @@ async def google_login(
     if user is None:
         if not settings.self_registration_enabled:
             raise HTTPException(status_code=403, detail="Criação de conta indisponível")
+        if data.requested_role is None or data.credential_reference is None:
+            raise HTTPException(
+                status_code=409,
+                detail="Conta não encontrada. Faça seu cadastro profissional primeiro.",
+            )
         user = User(
             name=identity.name,
             email=identity.email,
             password_hash=hash_password(secrets.token_urlsafe(48)),
-            role=UserRole.PSYCHOLOGIST,
+            role=data.requested_role,
+            requested_role=data.requested_role,
+            credential_reference=data.credential_reference.strip(),
+            account_status=AccountStatus.PENDING,
             auth_provider="google",
             google_subject=identity.subject,
         )
         db.add(user)
     else:
-        if user.role != UserRole.PSYCHOLOGIST:
+        if user.role == UserRole.ADMIN:
             raise HTTPException(
                 status_code=403,
                 detail="Login Google permitido somente para contas profissionais",
@@ -196,7 +220,29 @@ async def google_login(
         await db.rollback()
         raise HTTPException(status_code=409, detail="Conta Google já vinculada") from error
     await db.refresh(user)
-    return issue_session(request, response, user)
+    if user.account_status != AccountStatus.ACTIVE:
+        return GoogleAuthResponse(
+            authenticated=False,
+            account_status=user.account_status,
+            message=account_status_message(user.account_status),
+        )
+
+    issue_session(request, response, user)
+    return GoogleAuthResponse(
+        authenticated=True,
+        account_status=user.account_status,
+        message="Acesso autorizado.",
+    )
+
+
+def account_status_message(account_status: AccountStatus) -> str:
+    messages = {
+        AccountStatus.PENDING: "Cadastro aguardando verificação do administrador.",
+        AccountStatus.REJECTED: "Cadastro não aprovado. Entre em contato com o administrador.",
+        AccountStatus.SUSPENDED: "Conta suspensa. Entre em contato com o administrador.",
+        AccountStatus.ACTIVE: "Acesso autorizado.",
+    }
+    return messages[account_status]
 
 @router.post("/login")
 async def login(
@@ -240,6 +286,12 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou senha inválidos"
+        )
+
+    if user.account_status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=account_status_message(user.account_status),
         )
 
     try:
@@ -299,6 +351,12 @@ async def refresh_access_token(
 
     if payload.get("ver", 0) != user.token_version:
         raise HTTPException(status_code=401, detail="Sessão expirada")
+
+    if user.account_status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=account_status_message(user.account_status),
+        )
 
     token_id = payload.get("jti")
     if not isinstance(token_id, str):

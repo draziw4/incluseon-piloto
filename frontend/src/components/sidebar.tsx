@@ -3,6 +3,7 @@ import { Settings, LogOut, Sparkles } from "lucide-react"
 import { NavLink } from "react-router-dom"
 
 import { useAuth } from "../features/auth/hooks/use-auth"
+import { hasTool, roleLabels } from "../features/auth/access"
 import { navigationItems } from "../routes/navigation"
 
 export function Sidebar() {
@@ -26,7 +27,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-        {navigationItems.map((item) => {
+        {navigationItems.filter((item) => hasTool(user, item.tool)).map((item) => {
           const Icon = item.icon
 
           return (
@@ -67,6 +68,9 @@ export function Sidebar() {
             </p>
             <p className="truncate text-xs text-zinc-500">
               {user?.email}
+            </p>
+            <p className="truncate text-xs font-medium text-blue-600">
+              {user ? roleLabels[user.role] ?? user.role : ""}
             </p>
           </div>
 

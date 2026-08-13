@@ -16,9 +16,10 @@ import { EditStudentProfessionalModal } from "./edit-student-professional-modal"
 
 type Props = {
   studentId: string;
+  canManage: boolean;
 };
 
-export function StudentTeamPanel({ studentId }: Props) {
+export function StudentTeamPanel({ studentId, canManage }: Props) {
   const [openAddModal, setOpenAddModal] = useState(false);
 
   const [editingProfessional, setEditingProfessional] =
@@ -63,19 +64,20 @@ export function StudentTeamPanel({ studentId }: Props) {
           </h2>
 
           <p className="text-sm text-zinc-500">
-            Gerencie quais profissionais têm acesso a este aluno e o que cada um
-            pode fazer.
+            {canManage
+              ? "Gerencie quais profissionais têm acesso a este aluno e o que cada um pode fazer."
+              : "Consulte os profissionais vinculados e as permissões definidas pela equipe responsável."}
           </p>
         </div>
 
-        <button
+        {canManage ? <button
           type="button"
           onClick={() => setOpenAddModal(true)}
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
           Vincular profissional
-        </button>
+        </button> : null}
       </div>
 
       {isLoading && (
@@ -109,6 +111,7 @@ export function StudentTeamPanel({ studentId }: Props) {
             <StudentProfessionalCard
               key={professional.id}
               professional={professional}
+              canManage={canManage}
               onEdit={setEditingProfessional}
               onRemove={handleRemove}
             />
@@ -131,28 +134,28 @@ export function StudentTeamPanel({ studentId }: Props) {
             trabalho colaborativo.
           </p>
 
-          <button
+          {canManage ? <button
             type="button"
             onClick={() => setOpenAddModal(true)}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
             + Vincular primeiro profissional
-          </button>
+          </button> : null}
         </div>
       )}
 
-      <AddStudentProfessionalModal
+      {canManage ? <AddStudentProfessionalModal
         studentId={studentId}
         open={openAddModal}
         onClose={() => setOpenAddModal(false)}
-      />
+      /> : null}
 
-      <EditStudentProfessionalModal
+      {canManage ? <EditStudentProfessionalModal
         studentId={studentId}
         professional={editingProfessional}
         open={!!editingProfessional}
         onClose={() => setEditingProfessional(null)}
-      />
+      /> : null}
     </div>
   );
 }

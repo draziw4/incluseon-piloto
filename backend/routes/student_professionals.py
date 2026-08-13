@@ -11,12 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from database import get_db
+from access_policy import (
+    STUDENT_PERMISSION_TO_TOOL,
+    ToolAccess,
+    normalize_student_permissions,
+)
+from permissions import require_tool
 
 from dependencies import get_current_user
 from sqlalchemy.orm import selectinload
 
 from models.models import (
+    AccountStatus,
     User,
+    UserRole,
     Student,
     StudentProfessional
 )
@@ -34,7 +42,7 @@ from services.permissions_service import (
 
 router = APIRouter(
     prefix="/students",
-    tags=["Student Professionals"]
+    tags=["Student Professionals"],
 )
 
 @router.get(
@@ -75,7 +83,7 @@ async def add_student_professional(
     student_id: int,
     data: StudentProfessionalCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(require_tool(ToolAccess.TEAM_MANAGEMENT))]
 ):
     student = await db.get(
         Student,
@@ -90,7 +98,7 @@ async def add_student_professional(
 
     if (
         student.psychologist_id != current_user.id
-        and current_user.role != "admin"
+        and current_user.role != UserRole.ADMIN
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -108,6 +116,12 @@ async def add_student_professional(
             detail="Usuário profissional não encontrado"
         )
 
+    if user_to_link.account_status != AccountStatus.ACTIVE or user_to_link.role == UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Somente profissionais ativos podem ser vinculados ao aluno",
+        )
+
     existing_result = await db.execute(
         select(StudentProfessional).where(
             StudentProfessional.student_id == student_id,
@@ -123,16 +137,19 @@ async def add_student_professional(
             detail="Este profissional já está vinculado a este aluno"
         )
 
+    allowed_permissions = normalize_student_permissions(
+        user_to_link.role,
+        {
+            permission: getattr(data, permission)
+            for permission in STUDENT_PERMISSION_TO_TOOL
+        },
+    )
+
     link = StudentProfessional(
         student_id=student_id,
         user_id=data.user_id,
         role_in_student=data.role_in_student,
-        can_view=data.can_view,
-        can_register_aba=data.can_register_aba,
-        can_create_assessment=data.can_create_assessment,
-        can_create_pei=data.can_create_pei,
-        can_generate_ai_report=data.can_generate_ai_report,
-        can_view_reports=data.can_view_reports
+        **allowed_permissions,
     )
 
     db.add(link)
@@ -162,7 +179,7 @@ async def update_student_professional(
     link_id: int,
     data: StudentProfessionalUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(require_tool(ToolAccess.TEAM_MANAGEMENT))]
 ):
     student = await db.get(
         Student,
@@ -177,7 +194,7 @@ async def update_student_professional(
 
     if (
         student.psychologist_id != current_user.id
-        and current_user.role != "admin"
+        and current_user.role != UserRole.ADMIN
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -211,6 +228,23 @@ async def update_student_professional(
             value
         )
 
+    linked_user = await db.get(User, link.user_id)
+    if not linked_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário profissional não encontrado",
+        )
+
+    normalized_permissions = normalize_student_permissions(
+        linked_user.role,
+        {
+            permission: getattr(link, permission)
+            for permission in STUDENT_PERMISSION_TO_TOOL
+        },
+    )
+    for permission, value in normalized_permissions.items():
+        setattr(link, permission, value)
+
     await db.commit()
 
     result = await db.execute(
@@ -237,7 +271,7 @@ async def remove_student_professional(
     student_id: int,
     link_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(require_tool(ToolAccess.TEAM_MANAGEMENT))]
 ):
     await require_student_access(
         db=db,

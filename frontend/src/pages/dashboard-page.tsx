@@ -13,8 +13,11 @@ import { Link } from "react-router-dom"
 import { useStudents } from "@/features/students/hooks/use-students"
 import { useDashboardSummary } from "@/features/dashboard/hooks/use-dashboard-summary"
 import type { DashboardReminder } from "@/features/dashboard/types/dashboard-summary"
+import { hasTool } from "@/features/auth/access"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const {
     data: studentsData,
     isLoading: isLoadingStudents
@@ -46,14 +49,14 @@ export function DashboardPage() {
             </h1>
 
             <p className="text-sm text-blue-700">
-              Acompanhe alunos, registros ABA, avaliações e estudos de caso com IA.
+              Acompanhe seus alunos e utilize as ferramentas liberadas para seu perfil.
             </p>
           </div>
         </div>
 
-        <Link to="/case-studies" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        {hasTool(user, "ai_case_studies") ? <Link to="/case-studies" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
           Gerar estudo de caso IA
-        </Link>
+        </Link> : null}
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -64,26 +67,26 @@ export function DashboardPage() {
           icon={<Users size={22} />}
         />
 
-        <DashboardCard
+        {hasTool(user, "behavior_records") ? <DashboardCard
           title="Registros ABA"
           value={isLoadingDashboard ? "..." : String(metrics?.behavior_records_last_7_days ?? 0)}
           subtitle="nos últimos 7 dias"
           icon={<Activity size={22} />}
-        />
+        /> : null}
 
-        <DashboardCard
+        {hasTool(user, "assessments") ? <DashboardCard
           title="Avaliações"
           value={isLoadingDashboard ? "..." : String(metrics?.assessments_count ?? 0)}
           subtitle="instrumentos preenchidos"
           icon={<Brain size={22} />}
-        />
+        /> : null}
 
-        <DashboardCard
+        {hasTool(user, "reports") ? <DashboardCard
           title="Relatórios IA"
           value={isLoadingDashboard ? "..." : String(metrics?.ai_reports_count ?? 0)}
           subtitle="estudos de caso gerados"
           icon={<FileText size={22} />}
-        />
+        /> : null}
       </section>
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -127,42 +130,42 @@ export function DashboardPage() {
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
-            <QuickAction
+            {hasTool(user, "student_management") ? <QuickAction
               icon={<Users size={20} />}
               title="Novo aluno"
               subtitle="Cadastrar"
               color="bg-blue-50 text-blue-700"
               to="/students"
-            />
+            /> : null}
 
-            <QuickAction
+            {hasTool(user, "behavior_records") ? <QuickAction
               icon={<Activity size={20} />}
               title="Registro ABA"
               subtitle="Ocorrência"
               color="bg-emerald-50 text-emerald-700"
               to="/behavior-records"
-            />
+            /> : null}
 
-            <QuickAction
+            {hasTool(user, "assessments") ? <QuickAction
               icon={<Brain size={20} />}
               title="Avaliação"
               subtitle="Instrumento"
               color="bg-purple-50 text-purple-700"
               to="/assessments"
-            />
+            /> : null}
 
-            <QuickAction
+            {hasTool(user, "appointments") ? <QuickAction
               icon={<Calendar size={20} />}
               title="Agenda"
               subtitle="Atendimento"
               color="bg-orange-50 text-orange-700"
               to="/appointments"
-            />
+            /> : null}
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {hasTool(user, "appointments") ? <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <DashboardCard
           title="Atendimentos hoje"
           value={isLoadingDashboard ? "..." : String(metrics?.appointments_today ?? 0)}
@@ -176,7 +179,7 @@ export function DashboardPage() {
           subtitle="atendimentos futuros"
           icon={<AlertCircle size={22} />}
         />
-      </section>
+      </section> : null}
 
       <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
@@ -231,12 +234,12 @@ export function DashboardPage() {
               Nenhum aluno cadastrado ainda.
             </p>
 
-            <Link
+            {hasTool(user, "student_management") ? <Link
               to="/students"
               className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               + Cadastrar primeiro aluno
-            </Link>
+            </Link> : null}
           </div>
         )}
       </section>

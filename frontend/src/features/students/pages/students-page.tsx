@@ -8,6 +8,7 @@ import { StudentFormModal } from "../components/create-student-modal"
 import { DeleteStudentModal } from "../components/delete-student-modal"
 import type { Student } from "../types/student"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { hasTool } from "@/features/auth/access"
 
 export function StudentsPage() {
   const [search, setSearch] = useState("")
@@ -15,6 +16,7 @@ export function StudentsPage() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null)
   const { user } = useAuth()
+  const canManageStudents = hasTool(user, "student_management")
 
   const {
     data,
@@ -41,13 +43,13 @@ export function StudentsPage() {
           </p>
         </div>
 
-        <button
+        {canManageStudents ? <button
           onClick={() => setOpenCreateModal(true)}
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
           Novo aluno
-        </button>
+        </button> : null}
       </div>
 
       <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
@@ -81,7 +83,7 @@ export function StudentsPage() {
             <StudentCard
               key={student.id}
               student={student}
-              canManage={user?.role === "admin" || student.psychologist_id === user?.id}
+              canManage={canManageStudents && (user?.role === "admin" || student.psychologist_id === user?.id)}
               onEdit={setEditingStudent}
               onDelete={setDeletingStudent}
             />
@@ -104,25 +106,25 @@ export function StudentsPage() {
             entrevistas e geração de estudos de caso com IA.
           </p>
 
-          <button
+          {canManageStudents ? <button
             onClick={() => setOpenCreateModal(true)}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
             + Cadastrar primeiro aluno
-          </button>
+          </button> : null}
         </div>
       )}
 
-      <StudentFormModal
+      {canManageStudents ? <StudentFormModal
         open={openCreateModal || Boolean(editingStudent)}
         student={editingStudent}
         onClose={() => {
           setOpenCreateModal(false)
           setEditingStudent(null)
         }}
-      />
+      /> : null}
 
-      <DeleteStudentModal student={deletingStudent} onClose={() => setDeletingStudent(null)} />
+      {canManageStudents ? <DeleteStudentModal student={deletingStudent} onClose={() => setDeletingStudent(null)} /> : null}
     </div>
   )
 }

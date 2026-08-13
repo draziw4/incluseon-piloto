@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess, role_has_tool
+from permissions import require_tool
 from dependencies import get_current_user
 from models.models import (
     AIReport,
@@ -23,7 +25,11 @@ from models.models import (
 from schemas.dashboard import DashboardReminder, DashboardSummary
 
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(
+    prefix="/dashboard",
+    tags=["Dashboard"],
+    dependencies=[Depends(require_tool(ToolAccess.DASHBOARD))],
+)
 
 
 @router.get("/summary", response_model=DashboardSummary)
@@ -51,21 +57,21 @@ async def get_dashboard_summary(
             BehaviorRecord.student_id.in_(visible_ids_select),
             BehaviorRecord.created_at >= seven_days_ago
         )
-    )
+    ) if role_has_tool(current_user.role, ToolAccess.BEHAVIOR_RECORDS) else 0
 
     assessments_count = await scalar_count(
         db,
         select(func.count()).select_from(Assessment).where(
             Assessment.student_id.in_(visible_ids_select)
         )
-    )
+    ) if role_has_tool(current_user.role, ToolAccess.ASSESSMENTS) else 0
 
     ai_reports_count = await scalar_count(
         db,
         select(func.count()).select_from(AIReport).where(
             AIReport.student_id.in_(visible_ids_select)
         )
-    )
+    ) if role_has_tool(current_user.role, ToolAccess.REPORTS) else 0
 
     appointments_today = await scalar_count(
         db,
@@ -78,7 +84,7 @@ async def get_dashboard_summary(
                 AppointmentStatus.PENDING
             ])
         )
-    )
+    ) if role_has_tool(current_user.role, ToolAccess.APPOINTMENTS) else 0
 
     upcoming_appointments = await scalar_count(
         db,
@@ -91,14 +97,19 @@ async def get_dashboard_summary(
                 AppointmentStatus.PENDING
             ])
         )
-    )
+    ) if role_has_tool(current_user.role, ToolAccess.APPOINTMENTS) else 0
 
     reminders: list[DashboardReminder] = []
-    reminders.extend(await get_upcoming_appointment_reminders(db, visible_ids_select, now, next_week))
-    reminders.extend(await get_student_without_recent_behavior_reminders(db, visible_ids_select, seven_days_ago))
-    reminders.extend(await get_student_without_assessment_reminders(db, visible_ids_select))
-    reminders.extend(await get_unreviewed_report_reminders(db, visible_ids_select))
-    reminders.extend(await get_goal_deadline_reminders(db, visible_ids_select, now))
+    if role_has_tool(current_user.role, ToolAccess.APPOINTMENTS):
+        reminders.extend(await get_upcoming_appointment_reminders(db, visible_ids_select, now, next_week))
+    if role_has_tool(current_user.role, ToolAccess.BEHAVIOR_RECORDS):
+        reminders.extend(await get_student_without_recent_behavior_reminders(db, visible_ids_select, seven_days_ago))
+    if role_has_tool(current_user.role, ToolAccess.ASSESSMENTS):
+        reminders.extend(await get_student_without_assessment_reminders(db, visible_ids_select))
+    if role_has_tool(current_user.role, ToolAccess.REPORTS):
+        reminders.extend(await get_unreviewed_report_reminders(db, visible_ids_select))
+    if role_has_tool(current_user.role, ToolAccess.GOALS):
+        reminders.extend(await get_goal_deadline_reminders(db, visible_ids_select, now))
 
     return {
         "metrics": {

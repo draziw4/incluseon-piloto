@@ -11,6 +11,7 @@ export type LinkedUser = {
   name: string
   email: string
   role: string
+  allowed_tools: string[]
 }
 
 export type StudentProfessional = {

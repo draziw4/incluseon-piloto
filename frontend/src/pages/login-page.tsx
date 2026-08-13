@@ -57,7 +57,11 @@ export function LoginPage() {
       try {
         setGooglePending(true);
         setLoginError("");
-        await loginWithGoogle(credential);
+        const result = await loginWithGoogle(credential);
+        if (!result.authenticated) {
+          setLoginError(result.message);
+          return;
+        }
         await refreshAuthenticatedUser();
         navigate("/");
       } catch (error) {
@@ -96,8 +100,8 @@ export function LoginPage() {
       await refreshAuthenticatedUser();
 
       navigate("/");
-    } catch {
-      setLoginError("Email ou senha inválidos.");
+    } catch (error) {
+      setLoginError(getApiErrorMessage(error));
     }
   }
 

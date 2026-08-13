@@ -17,6 +17,11 @@ import { useAddStudentProfessional } from "../hooks/use-add-student-professional
 import { useSearchUsers } from "../../../users/hooks/use-search-users";
 
 import type { UserSearchResult } from "../../../users/types/user-search-result";
+import {
+  getStudentRolePreset,
+  isStudentPermissionAllowed,
+  type StudentPermissionKey,
+} from "../access";
 
 type Props = {
   studentId: string;
@@ -68,50 +73,13 @@ export function AddStudentProfessionalModal({
     name: "role_in_student",
   });
 
-  function applyRolePreset(selectedRole: string) {
-    if (selectedRole === "support") {
-      setValue("can_view", true);
-      setValue("can_register_aba", true);
-      setValue("can_create_assessment", false);
-      setValue("can_create_pei", false);
-      setValue("can_generate_ai_report", false);
-      setValue("can_view_reports", false);
-    }
-
-    if (selectedRole === "aee") {
-      setValue("can_view", true);
-      setValue("can_register_aba", false);
-      setValue("can_create_assessment", true);
-      setValue("can_create_pei", true);
-      setValue("can_generate_ai_report", true);
-      setValue("can_view_reports", true);
-    }
-
-    if (selectedRole === "psychologist") {
-      setValue("can_view", true);
-      setValue("can_register_aba", true);
-      setValue("can_create_assessment", true);
-      setValue("can_create_pei", true);
-      setValue("can_generate_ai_report", true);
-      setValue("can_view_reports", true);
-    }
-
-    if (selectedRole === "supervisor") {
-      setValue("can_view", true);
-      setValue("can_register_aba", true);
-      setValue("can_create_assessment", true);
-      setValue("can_create_pei", true);
-      setValue("can_generate_ai_report", true);
-      setValue("can_view_reports", true);
-    }
-
-    if (selectedRole === "viewer") {
-      setValue("can_view", true);
-      setValue("can_register_aba", false);
-      setValue("can_create_assessment", false);
-      setValue("can_create_pei", false);
-      setValue("can_generate_ai_report", false);
-      setValue("can_view_reports", false);
+  function applyRolePreset(
+    selectedRole: AddStudentProfessionalData["role_in_student"],
+    professional: UserSearchResult | null = selectedUser,
+  ) {
+    const preset = getStudentRolePreset(selectedRole, professional?.allowed_tools)
+    for (const [permission, value] of Object.entries(preset)) {
+      setValue(permission as StudentPermissionKey, value)
     }
   }
 
@@ -207,6 +175,7 @@ export function AddStudentProfessionalModal({
                     onClick={() => {
                       setSelectedUser(user);
                       setUserSearch(`${user.name} — ${user.email}`);
+                      if (role) applyRolePreset(role, user);
                     }}
                     className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-blue-50"
                   >
@@ -299,31 +268,37 @@ export function AddStudentProfessionalModal({
             <PermissionCheckbox
               label="Ver aluno"
               inputProps={register("can_view")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_view")}
             />
 
             <PermissionCheckbox
               label="Registrar ABA"
               inputProps={register("can_register_aba")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_register_aba")}
             />
 
             <PermissionCheckbox
               label="Criar avaliação"
               inputProps={register("can_create_assessment")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_create_assessment")}
             />
 
             <PermissionCheckbox
               label="Criar PEI"
               inputProps={register("can_create_pei")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_create_pei")}
             />
 
             <PermissionCheckbox
               label="Gerar relatório IA"
               inputProps={register("can_generate_ai_report")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_generate_ai_report")}
             />
 
             <PermissionCheckbox
               label="Ver relatórios"
               inputProps={register("can_view_reports")}
+              disabled={!isStudentPermissionAllowed(selectedUser?.allowed_tools, "can_view_reports")}
             />
           </div>
 
@@ -353,16 +328,18 @@ export function AddStudentProfessionalModal({
 type PermissionCheckboxProps = {
   label: string;
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+  disabled: boolean;
 };
 
-function PermissionCheckbox({ label, inputProps }: PermissionCheckboxProps) {
+function PermissionCheckbox({ label, inputProps, disabled }: PermissionCheckboxProps) {
   return (
-    <label className="flex items-center justify-between rounded-xl border border-blue-100 p-4 text-sm text-zinc-700">
-      <span>{label}</span>
+    <label className={`flex items-center justify-between rounded-xl border border-blue-100 p-4 text-sm text-zinc-700 ${disabled ? "bg-zinc-50 opacity-60" : ""}`}>
+      <span>{label}{disabled ? " — indisponível para o perfil" : ""}</span>
 
       <input
         type="checkbox"
         {...inputProps}
+        disabled={disabled}
         className="h-4 w-4 rounded border-zinc-300 text-blue-600"
       />
     </label>

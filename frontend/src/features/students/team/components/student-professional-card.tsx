@@ -12,12 +12,14 @@ import type {
 
 type Props = {
   professional: StudentProfessional
+  canManage: boolean
   onEdit: (professional: StudentProfessional) => void
   onRemove: (professional: StudentProfessional) => void
 }
 
 export function StudentProfessionalCard({
   professional,
+  canManage,
   onEdit,
   onRemove
 }: Props) {
@@ -85,7 +87,7 @@ export function StudentProfessionalCard({
         />
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 border-t border-blue-50 pt-4 md:flex-row md:justify-end">
+      {canManage ? <div className="mt-5 flex flex-col gap-3 border-t border-blue-50 pt-4 md:flex-row md:justify-end">
         <button
           type="button"
           onClick={() => onEdit(professional)}
@@ -103,7 +105,7 @@ export function StudentProfessionalCard({
           <Trash2 size={16} />
           Remover
         </button>
-      </div>
+      </div> : null}
     </article>
   )
 }

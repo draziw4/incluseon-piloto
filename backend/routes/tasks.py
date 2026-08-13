@@ -12,10 +12,13 @@ from database import get_db
 from models.models import User, AIReport
 from services.permissions_service import require_student_report_access
 from services.redis_service import get_task_owner
+from access_policy import ToolAccess
+from permissions import require_tool
 
 router = APIRouter(
     prefix="/tasks",
-    tags=["Tasks"]
+    tags=["Tasks"],
+    dependencies=[Depends(require_tool(ToolAccess.AI_CASE_STUDIES))],
 )
 
 @router.get("/{task_id}")

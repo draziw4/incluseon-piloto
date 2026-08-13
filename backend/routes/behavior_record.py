@@ -14,6 +14,8 @@ from typing import Annotated
 from datetime import datetime
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 
 from dependencies import get_current_user
 
@@ -36,7 +38,8 @@ from schemas.behavior_record import (
 
 router = APIRouter(
     prefix="/behavior-records",
-    tags=["Behavior Records"]
+    tags=["Behavior Records"],
+    dependencies=[Depends(require_tool(ToolAccess.BEHAVIOR_RECORDS))],
 )
 
 

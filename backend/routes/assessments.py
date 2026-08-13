@@ -11,6 +11,8 @@ from sqlalchemy import select
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 
 from dependencies import get_current_user
 
@@ -33,7 +35,8 @@ from schemas.assessment import (
 
 router = APIRouter(
     prefix="/assessments",
-    tags=["Assessments"]
+    tags=["Assessments"],
+    dependencies=[Depends(require_tool(ToolAccess.ASSESSMENTS))],
 )
 
 

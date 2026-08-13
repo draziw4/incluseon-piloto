@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from config import settings
 from security import decode_token, oauth2_scheme
-from models.models import User,Student
+from models.models import AccountStatus, User,Student
 from typing import Annotated
 
 
@@ -37,6 +37,12 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Sessão expirada"
+        )
+
+    if user.account_status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Conta sem aprovação ativa",
         )
 
     request.state.user_id = user.id

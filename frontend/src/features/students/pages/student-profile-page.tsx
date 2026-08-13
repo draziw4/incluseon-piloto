@@ -24,6 +24,7 @@ import { StudentTeamPanel } from "../team/components/student-team-panel";
 import { StudentFormModal } from "../components/create-student-modal";
 import { DeleteStudentModal } from "../components/delete-student-modal";
 import { useAuth } from "@/features/auth/hooks/use-auth";
+import { hasTool, type ToolAccess } from "@/features/auth/access";
 import { StudentGoalsPanel } from "../goals/components/student-goals-panel";
 import { useStudentProfessionals } from "../team/hooks/use-student-professionals";
 
@@ -37,6 +38,15 @@ type StudentProfileTab =
   | "goals"
   | "team";
 
+const tabTools: Partial<Record<StudentProfileTab, ToolAccess>> = {
+  behavior: "behavior_records",
+  assessments: "assessments",
+  timeline: "timeline",
+  analytics: "analytics",
+  reports: "reports",
+  goals: "goals",
+};
+
 export function StudentProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +55,8 @@ export function StudentProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const validTabs: StudentProfileTab[] = ["overview", "behavior", "assessments", "timeline", "analytics", "reports", "goals", "team"];
+  const validTabs: StudentProfileTab[] = ["overview", "behavior", "assessments", "timeline", "analytics", "reports", "goals", "team"]
+    .filter((tab) => !tabTools[tab as StudentProfileTab] || hasTool(user, tabTools[tab as StudentProfileTab]!)) as StudentProfileTab[];
   const activeTab: StudentProfileTab = validTabs.includes(requestedTab as StudentProfileTab)
     ? requestedTab as StudentProfileTab
     : "overview";
@@ -73,9 +84,10 @@ export function StudentProfilePage() {
     );
   }
 
-  const canManage = user?.role === "admin" || student.psychologist_id === user?.id;
+  const canManage = hasTool(user, "student_management") && (user?.role === "admin" || student.psychologist_id === user?.id);
   const currentUserLink = professionals?.find((professional) => professional.user_id === user?.id);
-  const canManageGoals = canManage || Boolean(currentUserLink?.can_create_pei);
+  const canManageGoals = hasTool(user, "goals") && (canManage || Boolean(currentUserLink?.can_create_pei));
+  const canManageTeam = hasTool(user, "team_management") && canManage;
 
   return (
     <div className="space-y-6">
@@ -96,45 +108,45 @@ export function StudentProfilePage() {
               onClick={() => selectTab("overview")}
             />
 
-            <StudentProfileNavButton
+            {hasTool(user, "behavior_records") ? <StudentProfileNavButton
               active={activeTab === "behavior"}
               icon={<Activity size={18} />}
               label="Registros ABA"
               onClick={() => selectTab("behavior")}
-            />
+            /> : null}
 
-            <StudentProfileNavButton
+            {hasTool(user, "assessments") ? <StudentProfileNavButton
               active={activeTab === "assessments"}
               icon={<FileText size={18} />}
               label="Entrevistas e Avaliações"
               onClick={() => selectTab("assessments")}
-            />
+            /> : null}
 
-            <StudentProfileNavButton
+            {hasTool(user, "timeline") ? <StudentProfileNavButton
               active={activeTab === "timeline"}
               icon={<Sparkles size={18} />}
               label="Timeline"
               onClick={() => selectTab("timeline")}
-            />
-            <StudentProfileNavButton
+            /> : null}
+            {hasTool(user, "analytics") ? <StudentProfileNavButton
               active={activeTab === "analytics"}
               icon={<BarChart3 size={18} />}
               label="Análise"
               onClick={() => selectTab("analytics")}
-            />
+            /> : null}
 
-            <StudentProfileNavButton
+            {hasTool(user, "goals") ? <StudentProfileNavButton
               active={activeTab === "goals"}
               icon={<Target size={18} />}
               label="PEI e Metas"
               onClick={() => selectTab("goals")}
-            />
-            <StudentProfileNavButton
+            /> : null}
+            {hasTool(user, "reports") ? <StudentProfileNavButton
               active={activeTab === "reports"}
               icon={<FileText size={18} />}
               label="Relatórios IA"
               onClick={() => selectTab("reports")}
-            />
+            /> : null}
             <StudentProfileNavButton
               active={activeTab === "team"}
               icon={<UserCog size={18} />}
@@ -170,7 +182,7 @@ export function StudentProfilePage() {
             <StudentGoalsPanel studentId={student.id.toString()} canManage={canManageGoals} />
           )}
           {activeTab === "team" && (
-            <StudentTeamPanel studentId={student.id.toString()} />
+            <StudentTeamPanel studentId={student.id.toString()} canManage={canManageTeam} />
           )}
         </main>
       </div>

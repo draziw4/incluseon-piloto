@@ -17,8 +17,10 @@ from sqlalchemy import (
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
 
 from dependencies import get_current_user
+from permissions import require_tool
 
 from models.models import (
     User,
@@ -46,7 +48,8 @@ from services.pdf.pdf_generator import delete_generated_report
 
 router = APIRouter(
     prefix="/students",
-    tags=["Students"]
+    tags=["Students"],
+    dependencies=[Depends(require_tool(ToolAccess.STUDENTS))],
 )
 
 
@@ -65,7 +68,7 @@ async def create_student(
 
     current_user: Annotated[
         User,
-        Depends(get_current_user)
+        Depends(require_tool(ToolAccess.STUDENT_MANAGEMENT))
     ]
 ):
     student = Student(
@@ -221,7 +224,7 @@ async def update_student(
 
     current_user: Annotated[
         User,
-        Depends(get_current_user)
+        Depends(require_tool(ToolAccess.STUDENT_MANAGEMENT))
     ]
 ):
     student = await get_student_or_404(
@@ -269,7 +272,7 @@ async def delete_student(
 
     current_user: Annotated[
         User,
-        Depends(get_current_user)
+        Depends(require_tool(ToolAccess.STUDENT_MANAGEMENT))
     ]
 ):
     student = await get_student_or_404(

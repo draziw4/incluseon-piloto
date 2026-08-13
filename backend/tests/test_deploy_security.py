@@ -55,6 +55,7 @@ class DeploySecurityTests(unittest.TestCase):
     def test_public_registration_does_not_accept_role(self):
         schema = app.openapi()["components"]["schemas"]["PublicRegistration"]
         self.assertNotIn("role", schema["properties"])
+        self.assertIn("requested_role", schema["properties"])
 
 
 if __name__ == "__main__":

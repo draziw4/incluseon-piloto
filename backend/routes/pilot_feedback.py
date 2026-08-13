@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from dependencies import get_current_user
 from models.models import PilotFeedback, User, UserRole
-from permissions import require_role
+from access_policy import ToolAccess
+from permissions import require_role, require_tool
 from schemas.pilot_feedback import (
     PilotFeedbackCreate,
     PilotFeedbackResponse,
@@ -15,7 +16,11 @@ from schemas.pilot_feedback import (
 )
 
 
-router = APIRouter(prefix="/pilot-feedback", tags=["Pilot feedback"])
+router = APIRouter(
+    prefix="/pilot-feedback",
+    tags=["Pilot feedback"],
+    dependencies=[Depends(require_tool(ToolAccess.PILOT_FEEDBACK))],
+)
 AdminUser = Annotated[User, Depends(require_role([UserRole.ADMIN]))]
 
 

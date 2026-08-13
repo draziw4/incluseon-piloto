@@ -9,6 +9,8 @@ from sqlalchemy import select
 from typing import Annotated
 
 from database import get_db
+from access_policy import ToolAccess
+from permissions import require_tool
 
 from dependencies import get_current_user
 
@@ -27,7 +29,8 @@ from services.permissions_service import (
 
 router = APIRouter(
     prefix="/timeline",
-    tags=["Timeline"]
+    tags=["Timeline"],
+    dependencies=[Depends(require_tool(ToolAccess.TIMELINE))],
 )
 
 
