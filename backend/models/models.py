@@ -508,6 +508,12 @@ class StudentProgressReport(Base):
         nullable=True,
         index=True,
     )
+    professional_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="aee",
+        index=True,
+    )
     report_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     period_start: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     period_end: Mapped[date] = mapped_column(Date, nullable=False)
@@ -524,6 +530,16 @@ class StudentProgressReport(Base):
     next_steps: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_by_role: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    review_status: Mapped[str | None] = mapped_column(String(30), nullable=True, index=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    reviewed_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reviewed_by_role: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -532,7 +548,8 @@ class StudentProgressReport(Base):
     )
 
     student: Mapped["Student"] = relationship(back_populates="progress_reports")
-    created_by: Mapped["User | None"] = relationship()
+    created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_id])
+    reviewed_by: Mapped["User | None"] = relationship(foreign_keys=[reviewed_by_id])
 
 
 class StudentGoal(Base):

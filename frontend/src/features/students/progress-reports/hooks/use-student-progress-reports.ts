@@ -4,15 +4,16 @@ import {
   createStudentProgressReport,
   deleteStudentProgressReport,
   getStudentProgressReports,
+  reviewStudentProgressReport,
   updateStudentProgressReport,
+  type StudentProgressReportFilters,
 } from "../api/student-progress-reports"
-import type { StudentProgressReportData } from "../schemas/student-progress-report-schema"
-import type { StudentProgressReportType } from "../types/student-progress-report"
+import type { StudentProgressReportData, StudentProgressReportReviewData } from "../schemas/student-progress-report-schema"
 
-export function useStudentProgressReports(studentId: string, reportType?: StudentProgressReportType) {
+export function useStudentProgressReports(studentId: string, filters: StudentProgressReportFilters = {}) {
   return useQuery({
-    queryKey: ["student-progress-reports", studentId, reportType ?? "all"],
-    queryFn: () => getStudentProgressReports(studentId, reportType),
+    queryKey: ["student-progress-reports", studentId, filters],
+    queryFn: () => getStudentProgressReports(studentId, filters),
     enabled: Boolean(studentId),
   })
 }
@@ -37,6 +38,11 @@ export function useStudentProgressReportMutations(studentId: string) {
     mutationFn: (reportId: number) => deleteStudentProgressReport(studentId, reportId),
     onSuccess: invalidate,
   })
+  const reviewMutation = useMutation({
+    mutationFn: ({ reportId, data }: { reportId: number; data: StudentProgressReportReviewData }) =>
+      reviewStudentProgressReport(studentId, reportId, data),
+    onSuccess: invalidate,
+  })
 
-  return { createMutation, updateMutation, deleteMutation }
+  return { createMutation, updateMutation, deleteMutation, reviewMutation }
 }

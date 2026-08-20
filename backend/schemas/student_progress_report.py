@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 ReportType = Literal["daily", "weekly"]
+ProfessionalType = Literal["aee", "support"]
+ReviewStatus = Literal["pending", "reviewed", "needs_adjustment"]
 
 
 class StudentProgressReportBase(BaseModel):
@@ -35,7 +37,13 @@ class StudentProgressReportBase(BaseModel):
 
 
 class StudentProgressReportCreate(StudentProgressReportBase):
-    pass
+    professional_type: ProfessionalType | None = None
+
+    @model_validator(mode="after")
+    def validate_professional_type(self):
+        if self.professional_type == "support" and self.report_type != "daily":
+            raise ValueError("O relatório do profissional de apoio deve ser diário")
+        return self
 
 
 class StudentProgressReportUpdate(BaseModel):
@@ -55,12 +63,24 @@ class StudentProgressReportUpdate(BaseModel):
     next_steps: str | None = Field(default=None, max_length=20_000)
 
 
+class StudentProgressReportReview(BaseModel):
+    review_status: Literal["reviewed", "needs_adjustment"]
+    review_notes: str = Field(min_length=3, max_length=20_000)
+
+
 class StudentProgressReportResponse(StudentProgressReportBase):
     id: int
     student_id: int
     created_by_id: int | None
     created_by_name: str | None
     created_by_role: str | None
+    professional_type: ProfessionalType
+    review_status: ReviewStatus | None
+    review_notes: str | None
+    reviewed_by_id: int | None
+    reviewed_by_name: str | None
+    reviewed_by_role: str | None
+    reviewed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

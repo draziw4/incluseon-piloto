@@ -125,12 +125,18 @@ async def get_student_timeline(
         timeline.append(
             TimelineItem(
                 type="progress_report",
-                title=report.title,
+                title=(
+                    f"Relatório do PA — {report.title}"
+                    if report.professional_type == "support"
+                    else f"Relatório do AEE — {report.title}"
+                ),
                 description=report.summary,
                 created_at=report.created_at,
                 metadata={
                     "report_id": report.id,
                     "report_type": report.report_type,
+                    "professional_type": report.professional_type,
+                    "review_status": report.review_status,
                     "period_start": report.period_start.isoformat(),
                     "period_end": report.period_end.isoformat(),
                     "created_by_name": report.created_by_name,

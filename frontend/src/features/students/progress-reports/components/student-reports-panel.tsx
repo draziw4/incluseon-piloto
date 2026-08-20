@@ -7,10 +7,9 @@ import { StudentProgressReportsPanel } from "./student-progress-reports-panel"
 type Props = {
   studentId: string
   canManageBehavior: boolean
-  canManageProgressReports: boolean
 }
 
-export function StudentReportsPanel({ studentId, canManageBehavior, canManageProgressReports }: Props) {
+export function StudentReportsPanel({ studentId, canManageBehavior }: Props) {
   const [activeSection, setActiveSection] = useState<"progress" | "behavior">("progress")
 
   return (
@@ -25,7 +24,7 @@ export function StudentReportsPanel({ studentId, canManageBehavior, canManagePro
       </div>
 
       {activeSection === "progress" ? (
-        <StudentProgressReportsPanel studentId={studentId} canManage={canManageProgressReports} />
+        <StudentProgressReportsPanel studentId={studentId} />
       ) : (
         <BehaviorRecordsPanel studentId={studentId} canManage={canManageBehavior} />
       )}

@@ -11,16 +11,17 @@ import {
   type StudentProgressReportData,
   type StudentProgressReportFormData,
 } from "../schemas/student-progress-report-schema"
-import type { StudentProgressReport, StudentProgressReportType } from "../types/student-progress-report"
+import type { StudentProgressProfessionalType, StudentProgressReport, StudentProgressReportType } from "../types/student-progress-report"
 
 type Props = {
   studentId: string
   open: boolean
   report?: StudentProgressReport | null
+  professionalType: StudentProgressProfessionalType
   onClose: () => void
 }
 
-const optionalFields = [
+const aeeFields = [
   ["activities", "Atividades desenvolvidas", "Quais atividades, propostas ou recursos foram trabalhados?"],
   ["participation_engagement", "Participação e engajamento", "Como o estudante iniciou, manteve e concluiu as atividades?"],
   ["progress", "Avanços observados", "Registre avanços com evidências observáveis."],
@@ -32,7 +33,18 @@ const optionalFields = [
   ["next_steps", "Próximos passos", "Ajustes, continuidade e ações previstas para o próximo período."],
 ] as const
 
-export function StudentProgressReportModal({ studentId, open, report, onClose }: Props) {
+const supportFields = [
+  ["activities", "Atividades acompanhadas", "Quais atividades o estudante realizou durante o dia?"],
+  ["participation_engagement", "Participação e resposta do estudante", "Como o estudante participou e respondeu às propostas?"],
+  ["difficulties", "Intercorrências, barreiras ou riscos", "Registre ocorrências relevantes, barreiras, crises, quedas ou riscos observados."],
+  ["strategies_and_resources", "Apoios e estratégias utilizados", "Que ajuda, recurso ou estratégia foi utilizada e qual foi a resposta?"],
+  ["communication_socialization", "Comunicação e interação", "Como se comunicou e interagiu com colegas e adultos?"],
+  ["autonomy_functionality", "Autonomia e cuidados", "Registre alimentação, higiene, mobilidade, organização e autorregulação."],
+  ["family_school_notes", "Informações importantes para o AEE", "Destaque fatos que o profissional do AEE precisa analisar."],
+  ["next_steps", "Pontos para acompanhamento", "O que precisa ser retomado ou observado no próximo dia?"],
+] as const
+
+export function StudentProgressReportModal({ studentId, open, report, professionalType, onClose }: Props) {
   const [actionError, setActionError] = useState<string | null>(null)
   const { createMutation, updateMutation } = useStudentProgressReportMutations(studentId)
   const {
@@ -47,11 +59,14 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
   })
   const reportType = useWatch({ control, name: "report_type" })
   const periodStart = useWatch({ control, name: "period_start" })
+  const effectiveProfessionalType = report?.professional_type ?? professionalType
+  const optionalFields = effectiveProfessionalType === "support" ? supportFields : aeeFields
 
   useEffect(() => {
     if (!open) return
     if (report) {
       reset({
+        professional_type: report.professional_type,
         report_type: report.report_type,
         period_start: report.period_start,
         period_end: report.period_end,
@@ -72,10 +87,11 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
 
     const today = localDateString(new Date())
     reset({
+      professional_type: effectiveProfessionalType,
       report_type: "daily",
       period_start: today,
       period_end: today,
-      title: defaultTitle("daily", today),
+      title: defaultTitle(effectiveProfessionalType, "daily", today),
       summary: "",
       activities: "",
       participation_engagement: "",
@@ -87,19 +103,19 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
       family_school_notes: "",
       next_steps: "",
     })
-  }, [open, report, reset])
+  }, [effectiveProfessionalType, open, report, reset])
 
   function changeReportType(nextType: StudentProgressReportType) {
     const start = periodStart || localDateString(new Date())
     setValue("report_type", nextType, { shouldValidate: true })
     setValue("period_end", nextType === "daily" ? start : addDays(start, 6), { shouldValidate: true })
-    if (!report) setValue("title", defaultTitle(nextType, start), { shouldValidate: true })
+    if (!report) setValue("title", defaultTitle(effectiveProfessionalType, nextType, start), { shouldValidate: true })
   }
 
   function changeStartDate(nextStart: string) {
     setValue("period_start", nextStart, { shouldValidate: true })
     setValue("period_end", reportType === "weekly" ? addDays(nextStart, 6) : nextStart, { shouldValidate: true })
-    if (!report) setValue("title", defaultTitle(reportType ?? "daily", nextStart), { shouldValidate: true })
+    if (!report) setValue("title", defaultTitle(effectiveProfessionalType, reportType ?? "daily", nextStart), { shouldValidate: true })
   }
 
   async function onSubmit(data: StudentProgressReportData) {
@@ -107,10 +123,15 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
       setActionError(null)
       if (report) await updateMutation.mutateAsync({ reportId: report.id, data })
       else await createMutation.mutateAsync(data)
-      onClose()
+      closeModal()
     } catch (error) {
       setActionError(getApiErrorMessage(error))
     }
+  }
+
+  function closeModal() {
+    setActionError(null)
+    onClose()
   }
 
   if (!open) return null
@@ -118,13 +139,13 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-5">
-      <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="progress-report-title" className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-xl">
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-blue-100 bg-white px-6 py-5">
           <div>
-            <h2 className="text-2xl font-bold text-blue-950">{report ? "Editar relatório" : "Novo relatório de acompanhamento"}</h2>
-            <p className="mt-1 text-sm text-zinc-500">Registro diário ou semanal elaborado pela profissional do AEE.</p>
+            <h2 id="progress-report-title" className="text-2xl font-bold text-blue-950">{report ? "Editar relatório" : effectiveProfessionalType === "support" ? "Novo relatório diário do PA" : "Novo relatório do AEE"}</h2>
+            <p className="mt-1 text-sm text-zinc-500">{effectiveProfessionalType === "support" ? "Registro objetivo do acompanhamento cotidiano para avaliação posterior do AEE." : "Registro pedagógico detalhado elaborado pelo profissional do AEE."}</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100">Fechar</button>
+          <button type="button" onClick={closeModal} className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100">Fechar</button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
@@ -136,12 +157,12 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
           )}
 
           <div className="grid grid-cols-1 gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 md:grid-cols-3">
-            <Field label="Periodicidade" error={errors.report_type?.message}>
+            {effectiveProfessionalType === "aee" ? <Field label="Periodicidade" error={errors.report_type?.message}>
               <select value={reportType ?? "daily"} onChange={(event) => changeReportType(event.target.value as StudentProgressReportType)} className={inputClass}>
                 <option value="daily">Diário</option>
                 <option value="weekly">Semanal</option>
               </select>
-            </Field>
+            </Field> : <div className="rounded-xl bg-white px-4 py-3 text-sm text-blue-800"><span className="block text-xs font-semibold uppercase tracking-wide text-blue-500">Tipo</span>Relatório diário do PA</div>}
             <Field label={reportType === "weekly" ? "Início da semana" : "Data do acompanhamento"} error={errors.period_start?.message}>
               <input type="date" value={periodStart ?? ""} onChange={(event) => changeStartDate(event.target.value)} className={inputClass} />
             </Field>
@@ -157,8 +178,8 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
           </Field>
 
           <TextAreaField
-            label="Síntese do acompanhamento"
-            placeholder="Descreva, de forma objetiva, como foi o acompanhamento no período."
+            label={effectiveProfessionalType === "support" ? "Síntese do dia" : "Síntese do acompanhamento"}
+            placeholder={effectiveProfessionalType === "support" ? "Resuma objetivamente como foi o acompanhamento do estudante hoje." : "Descreva, de forma objetiva e detalhada, como foi o acompanhamento no período."}
             error={errors.summary?.message}
             register={register("summary")}
             required
@@ -177,7 +198,7 @@ export function StudentProgressReportModal({ studentId, open, report, onClose }:
           </div>
 
           <div className="sticky bottom-0 flex justify-end gap-3 border-t border-blue-100 bg-white py-4">
-            <button type="button" onClick={onClose} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50">Cancelar</button>
+            <button type="button" onClick={closeModal} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50">Cancelar</button>
             <button type="submit" disabled={isSaving} className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
               {isSaving ? "Salvando..." : "Salvar relatório"}
             </button>
@@ -217,7 +238,8 @@ function addDays(dateValue: string, days: number) {
   return localDateString(date)
 }
 
-function defaultTitle(type: StudentProgressReportType, dateValue: string) {
+function defaultTitle(professionalType: StudentProgressProfessionalType, type: StudentProgressReportType, dateValue: string) {
   const date = new Date(`${dateValue}T12:00:00`).toLocaleDateString("pt-BR")
-  return `Relatório ${type === "daily" ? "diário" : "semanal"} - ${date}`
+  const authorLabel = professionalType === "support" ? "PA" : "AEE"
+  return `Relatório ${type === "daily" ? "diário" : "semanal"} do ${authorLabel} - ${date}`
 }

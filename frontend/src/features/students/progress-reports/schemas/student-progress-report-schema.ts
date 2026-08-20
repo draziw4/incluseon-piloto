@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 export const studentProgressReportSchema = z.object({
+  professional_type: z.enum(["aee", "support"]),
   report_type: z.enum(["daily", "weekly"]),
   period_start: z.string().min(1, "Informe a data inicial"),
   period_end: z.string().min(1, "Informe a data final"),
@@ -29,7 +30,16 @@ export const studentProgressReportSchema = z.object({
   if (data.report_type === "weekly" && durationDays > 6) {
     context.addIssue({ code: "custom", path: ["period_end"], message: "O período semanal deve ter no máximo sete dias" })
   }
+  if (data.professional_type === "support" && data.report_type !== "daily") {
+    context.addIssue({ code: "custom", path: ["report_type"], message: "O relatório do PA deve ser diário" })
+  }
+})
+
+export const studentProgressReportReviewSchema = z.object({
+  review_status: z.enum(["reviewed", "needs_adjustment"]),
+  review_notes: z.string().min(3, "Registre o parecer da avaliação").max(20_000),
 })
 
 export type StudentProgressReportFormData = z.input<typeof studentProgressReportSchema>
 export type StudentProgressReportData = z.output<typeof studentProgressReportSchema>
+export type StudentProgressReportReviewData = z.output<typeof studentProgressReportReviewSchema>

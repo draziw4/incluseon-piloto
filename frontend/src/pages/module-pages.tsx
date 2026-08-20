@@ -7,8 +7,10 @@ import { useAuth } from "@/features/auth/hooks/use-auth"
 export function BehaviorRecordsPage() {
   const { user } = useAuth()
   const canEnterRecords = hasTool(user, "behavior_entry")
+  const canCreateReports = user?.role === "admin" || user?.role === "aee" || user?.role === "support_professional"
+  const canWorkWithReports = canEnterRecords || canCreateReports
 
-  return <ResourceHubPage title="Relatórios" eyebrow="Acompanhamento do estudante" description={canEnterRecords ? "Consulte os relatórios diários e semanais e registre observações comportamentais vinculadas ao aluno." : "Acompanhe os relatórios e as observações inseridas pelos profissionais vinculados, sem alterar os dados de origem."} icon={Activity} tab="behavior" actionLabel={canEnterRecords ? "Abrir relatórios" : "Acompanhar relatórios"} emptyHint="Escolha o aluno cujo histórico de acompanhamento deseja consultar." />
+  return <ResourceHubPage title="Relatórios" eyebrow="Acompanhamento do estudante" description={canWorkWithReports ? "Acesse relatórios detalhados do AEE, relatórios diários do PA e observações comportamentais vinculadas ao aluno." : "Acompanhe os relatórios do AEE e do PA inseridos pelos profissionais vinculados, sem alterar os dados de origem."} icon={Activity} tab="behavior" actionLabel={canWorkWithReports ? "Abrir relatórios" : "Acompanhar relatórios"} emptyHint="Escolha o aluno cujo histórico de acompanhamento deseja consultar." />
 }
 
 export function AssessmentsPage() {
