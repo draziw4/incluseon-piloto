@@ -6,6 +6,9 @@ from pydantic import BaseModel
 class DashboardMetrics(BaseModel):
     students_count: int
     behavior_records_last_7_days: int
+    progress_reports_last_7_days: int
+    follow_up_records_last_7_days: int
+    pending_support_reviews: int
     assessments_count: int
     ai_reports_count: int
     appointments_today: int

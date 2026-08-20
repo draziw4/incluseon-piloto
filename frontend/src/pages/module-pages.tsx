@@ -34,5 +34,5 @@ export function ReportsPage() {
 }
 
 export function AnalyticsPage() {
-  return <ResourceHubPage title="Analytics" eyebrow="Indicadores comportamentais" description="Visualize frequência, intensidade, ambientes recorrentes e efetividade das estratégias registradas." icon={BarChart3} tab="analytics" actionLabel="Ver análise" emptyHint="Escolha um aluno para analisar seus dados comportamentais." />
+  return <ResourceHubPage title="Métricas e análise" eyebrow="Indicadores integrados do acompanhamento" description="Acompanhe relatórios AEE e PA, evolução funcional, revisões, metas do PAEE e registros comportamentais." icon={BarChart3} tab="analytics" actionLabel="Ver análise" emptyHint="Escolha um aluno para analisar os dados do acompanhamento." />
 }

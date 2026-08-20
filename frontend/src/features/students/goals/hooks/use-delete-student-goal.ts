@@ -10,6 +10,7 @@ export function useDeleteStudentGoal(studentId: string) {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["student-goals", studentId] }),
+        queryClient.invalidateQueries({ queryKey: ["student-behavior-analytics", studentId] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] })
       ])
     }

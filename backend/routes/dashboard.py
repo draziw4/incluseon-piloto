@@ -18,6 +18,7 @@ from models.models import (
     Student,
     StudentGoal,
     StudentGoalStatus,
+    StudentProgressReport,
     StudentProfessional,
     User,
     UserRole
@@ -58,6 +59,23 @@ async def get_dashboard_summary(
             BehaviorRecord.created_at >= seven_days_ago
         )
     ) if role_has_tool(current_user.role, ToolAccess.BEHAVIOR_RECORDS) else 0
+
+    progress_reports_last_7_days = await scalar_count(
+        db,
+        select(func.count()).select_from(StudentProgressReport).where(
+            StudentProgressReport.student_id.in_(visible_ids_select),
+            StudentProgressReport.period_end >= seven_days_ago.date()
+        )
+    ) if role_has_tool(current_user.role, ToolAccess.BEHAVIOR_RECORDS) else 0
+
+    pending_support_reviews = await scalar_count(
+        db,
+        select(func.count()).select_from(StudentProgressReport).where(
+            StudentProgressReport.student_id.in_(visible_ids_select),
+            StudentProgressReport.professional_type == "support",
+            StudentProgressReport.review_status == "pending"
+        )
+    ) if current_user.role in {UserRole.ADMIN, UserRole.AEE} else 0
 
     assessments_count = await scalar_count(
         db,
@@ -103,7 +121,9 @@ async def get_dashboard_summary(
     if role_has_tool(current_user.role, ToolAccess.APPOINTMENTS):
         reminders.extend(await get_upcoming_appointment_reminders(db, visible_ids_select, now, next_week))
     if role_has_tool(current_user.role, ToolAccess.BEHAVIOR_RECORDS):
-        reminders.extend(await get_student_without_recent_behavior_reminders(db, visible_ids_select, seven_days_ago))
+        reminders.extend(await get_student_without_recent_follow_up_reminders(db, visible_ids_select, seven_days_ago))
+    if current_user.role in {UserRole.ADMIN, UserRole.AEE}:
+        reminders.extend(await get_pending_support_report_reminders(db, visible_ids_select))
     if role_has_tool(current_user.role, ToolAccess.ASSESSMENTS):
         reminders.extend(await get_student_without_assessment_reminders(db, visible_ids_select))
     if role_has_tool(current_user.role, ToolAccess.REPORTS):
@@ -115,6 +135,9 @@ async def get_dashboard_summary(
         "metrics": {
             "students_count": students_count,
             "behavior_records_last_7_days": behavior_records_last_7_days,
+            "progress_reports_last_7_days": progress_reports_last_7_days,
+            "follow_up_records_last_7_days": behavior_records_last_7_days + progress_reports_last_7_days,
+            "pending_support_reviews": pending_support_reviews,
             "assessments_count": assessments_count,
             "ai_reports_count": ai_reports_count,
             "appointments_today": appointments_today,
@@ -176,16 +199,20 @@ async def get_upcoming_appointment_reminders(db, visible_ids_select, now, next_w
     ]
 
 
-async def get_student_without_recent_behavior_reminders(db, visible_ids_select, seven_days_ago):
+async def get_student_without_recent_follow_up_reminders(db, visible_ids_select, seven_days_ago):
     recent_behavior_student_ids = select(BehaviorRecord.student_id).where(
         BehaviorRecord.created_at >= seven_days_ago
+    )
+    recent_report_student_ids = select(StudentProgressReport.student_id).where(
+        StudentProgressReport.period_end >= seven_days_ago.date()
     )
 
     result = await db.execute(
         select(Student)
         .where(
             Student.id.in_(visible_ids_select),
-            Student.id.not_in(recent_behavior_student_ids)
+            Student.id.not_in(recent_behavior_student_ids),
+            Student.id.not_in(recent_report_student_ids)
         )
         .order_by(Student.created_at.desc())
         .limit(3)
@@ -193,13 +220,42 @@ async def get_student_without_recent_behavior_reminders(db, visible_ids_select, 
 
     return [
         DashboardReminder(
-            type="behavior",
-            title="Registrar evolução comportamental",
-            description=f"{student.name} não possui observação comportamental nos últimos 7 dias.",
-            to=f"/students/{student.id}?tab=behavior",
+            type="follow_up",
+            title="Registrar acompanhamento",
+            description=f"{student.name} não possui relatório ou observação nos últimos 7 dias.",
+            to=f"/students/{student.id}?tab=reports",
             priority="medium"
         )
         for student in result.scalars().all()
+    ]
+
+
+async def get_pending_support_report_reminders(db, visible_ids_select):
+    result = await db.execute(
+        select(
+            Student,
+            func.count(StudentProgressReport.id).label("pending_count"),
+        )
+        .join(StudentProgressReport, StudentProgressReport.student_id == Student.id)
+        .where(
+            Student.id.in_(visible_ids_select),
+            StudentProgressReport.professional_type == "support",
+            StudentProgressReport.review_status == "pending",
+        )
+        .group_by(Student.id)
+        .order_by(func.max(StudentProgressReport.period_end).desc())
+        .limit(3)
+    )
+
+    return [
+        DashboardReminder(
+            type="support_report_review",
+            title="Avaliar relatório diário do PA",
+            description=f"{student.name} possui {pending_count} relatório(s) aguardando avaliação do AEE.",
+            to=f"/students/{student.id}?tab=reports",
+            priority="high",
+        )
+        for student, pending_count in result.all()
     ]
 
 
@@ -277,7 +333,7 @@ async def get_goal_deadline_reminders(db, visible_ids_select, now):
         reminders.append(
             DashboardReminder(
                 type="goal",
-                title="Meta PEI vencida" if is_overdue else "Meta PEI próxima do prazo",
+                title="Meta do PAEE vencida" if is_overdue else "Meta do PAEE próxima do prazo",
                 description=f"{student.name}: {goal.title}",
                 to=f"/students/{student.id}?tab=goals",
                 priority="high" if is_overdue else "medium"

@@ -40,10 +40,19 @@ const reviewLabels = {
   needs_adjustment: { label: "Ajuste solicitado pelo AEE", className: "bg-red-50 text-red-700" },
 } as const
 
+const indicatorLabels = [
+  ["participation_level", "Participação"],
+  ["autonomy_level", "Autonomia"],
+  ["communication_level", "Comunicação"],
+  ["regulation_level", "Autorregulação"],
+  ["support_level", "Necessidade de apoio"],
+] as const
+
 export function StudentProgressReportCard({ report, canChange, canReview, onEdit, onDelete, onReview }: Props) {
   const detailFields = report.professional_type === "support" ? supportDetailFields : aeeDetailFields
   const details = detailFields.filter(([field]) => Boolean(report[field]))
   const review = report.review_status ? reviewLabels[report.review_status] : null
+  const indicators = indicatorLabels.filter(([field]) => report[field] !== null)
 
   return (
     <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
@@ -88,6 +97,19 @@ export function StudentProgressReportCard({ report, canChange, canReview, onEdit
         <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Síntese</p>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{report.summary}</p>
       </div>
+
+      {indicators.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Indicadores observados</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {indicators.map(([field, label]) => (
+              <span key={field} className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-800">
+                {label}: {report[field]}/5
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {details.length > 0 && (
         <details className="mt-4">

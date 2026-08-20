@@ -5,7 +5,9 @@ import {
   FileText,
   Calendar,
   Sparkles,
+  ShieldCheck,
   AlertCircle,
+  BookOpenCheck,
   CheckCircle2
 } from "lucide-react"
 import { Link } from "react-router-dom"
@@ -68,10 +70,17 @@ export function DashboardPage() {
         />
 
         {hasTool(user, "behavior_records") ? <DashboardCard
-          title="Observações registradas"
-          value={isLoadingDashboard ? "..." : String(metrics?.behavior_records_last_7_days ?? 0)}
-          subtitle="nos últimos 7 dias"
+          title="Registros de acompanhamento"
+          value={isLoadingDashboard ? "..." : String(metrics?.follow_up_records_last_7_days ?? 0)}
+          subtitle="relatórios e observações nos últimos 7 dias"
           icon={<Activity size={22} />}
+        /> : null}
+
+        {user?.role === "aee" || user?.role === "admin" ? <DashboardCard
+          title="Avaliações do PA pendentes"
+          value={isLoadingDashboard ? "..." : String(metrics?.pending_support_reviews ?? 0)}
+          subtitle="relatórios aguardando parecer do AEE"
+          icon={<ShieldCheck size={22} />}
         /> : null}
 
         {hasTool(user, "assessments") ? <DashboardCard
@@ -130,6 +139,14 @@ export function DashboardPage() {
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
+            <QuickAction
+              icon={<BookOpenCheck size={20} />}
+              title="Orientações"
+              subtitle="Consultar guia"
+              color="bg-sky-50 text-sky-700"
+              to="/orientacoes"
+            />
+
             {hasTool(user, "student_management") ? <QuickAction
               icon={<Users size={20} />}
               title="Novo aluno"

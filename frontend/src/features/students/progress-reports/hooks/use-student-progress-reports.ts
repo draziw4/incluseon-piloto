@@ -23,6 +23,8 @@ export function useStudentProgressReportMutations(studentId: string) {
   const invalidate = () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["student-progress-reports", studentId] }),
     queryClient.invalidateQueries({ queryKey: ["student-timeline", studentId] }),
+    queryClient.invalidateQueries({ queryKey: ["student-behavior-analytics", studentId] }),
+    queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] }),
   ])
 
   const createMutation = useMutation({

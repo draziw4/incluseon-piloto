@@ -18,6 +18,7 @@ const legalPages = import("./pages/legal-pages")
 const PrivacyPage = lazy(() => legalPages.then((module) => ({ default: module.PrivacyPage })))
 const TermsPage = lazy(() => legalPages.then((module) => ({ default: module.TermsPage })))
 const DashboardPage = lazy(() => import("./pages/dashboard-page").then((module) => ({ default: module.DashboardPage })))
+const ProfessionalGuidancePage = lazy(() => import("./pages/professional-guidance-page").then((module) => ({ default: module.ProfessionalGuidancePage })))
 const StudentsPage = lazy(() => import("./features/students/pages/students-page").then((module) => ({ default: module.StudentsPage })))
 const StudentProfilePage = lazy(() => import("./features/students/pages/student-profile-page").then((module) => ({ default: module.StudentProfilePage })))
 const AppointmentsPage = lazy(() => import("./features/appointments/pages/appointments-page").then((module) => ({ default: module.AppointmentsPage })))
@@ -51,6 +52,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<ToolRoute tool="dashboard"><DashboardPage /></ToolRoute>} />
+          <Route path="orientacoes" element={<ToolRoute tool="dashboard"><ProfessionalGuidancePage /></ToolRoute>} />
           <Route path="students" element={<ToolRoute tool="students"><StudentsPage /></ToolRoute>} />
           <Route path="students/:id" element={<ToolRoute tool="students"><StudentProfilePage /></ToolRoute>} />
           <Route path="appointments" element={<ToolRoute tool="appointments"><AppointmentsPage /></ToolRoute>} />

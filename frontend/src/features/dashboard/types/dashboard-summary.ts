@@ -1,6 +1,9 @@
 export type DashboardMetrics = {
   students_count: number
   behavior_records_last_7_days: number
+  progress_reports_last_7_days: number
+  follow_up_records_last_7_days: number
+  pending_support_reviews: number
   assessments_count: number
   ai_reports_count: number
   appointments_today: number

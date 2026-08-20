@@ -16,6 +16,14 @@ export function useCreateBehaviorRecord(studentId: string) {
       queryClient.invalidateQueries({
         queryKey: ["student", studentId]
       })
+
+      queryClient.invalidateQueries({
+        queryKey: ["student-behavior-analytics", studentId]
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-summary"]
+      })
     }
   })
 }

@@ -9,7 +9,7 @@ export async function getStudentBehaviorAnalytics(
 ) {
   const response =
     await api.get<StudentBehaviorAnalytics>(
-      `/analytics/student/${studentId}/behavior`
+      `/analytics/student/${studentId}/overview`
     )
 
   return response.data

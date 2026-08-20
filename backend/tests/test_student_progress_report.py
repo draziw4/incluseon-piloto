@@ -86,6 +86,11 @@ class StudentProgressReportTests(unittest.TestCase):
             "autonomy_functionality",
             "family_school_notes",
             "next_steps",
+            "participation_level",
+            "autonomy_level",
+            "communication_level",
+            "regulation_level",
+            "support_level",
             "professional_type",
             "review_status",
             "review_notes",
@@ -93,6 +98,23 @@ class StudentProgressReportTests(unittest.TestCase):
             "reviewed_at",
         ):
             self.assertIn(field, columns)
+
+    def test_structured_indicators_use_a_one_to_five_scale(self):
+        report = StudentProgressReportCreate.model_validate(
+            valid_payload(
+                participation_level=4,
+                autonomy_level=3,
+                communication_level=5,
+                regulation_level=2,
+                support_level=4,
+            )
+        )
+        self.assertEqual(report.autonomy_level, 3)
+
+        with self.assertRaises(ValidationError):
+            StudentProgressReportCreate.model_validate(
+                valid_payload(autonomy_level=6)
+            )
 
     def test_support_report_is_always_daily(self):
         report = StudentProgressReportCreate.model_validate(

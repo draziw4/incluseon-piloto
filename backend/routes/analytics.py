@@ -36,8 +36,13 @@ router = APIRouter(
 
 
 @router.get(
-    "/student/{student_id}/behavior",
+    "/student/{student_id}/overview",
     response_model=StudentBehaviorAnalytics
+)
+@router.get(
+    "/student/{student_id}/behavior",
+    response_model=StudentBehaviorAnalytics,
+    include_in_schema=False,
 )
 async def get_student_behavior_analytics(
     student_id: int,

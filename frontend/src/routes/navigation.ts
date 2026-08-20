@@ -2,6 +2,7 @@ import {
   Activity,
   BarChart3,
   Brain,
+  BookOpenCheck,
   CalendarDays,
   ClipboardList,
   FileText,
@@ -25,6 +26,7 @@ export type NavigationItem = {
 
 export const navigationItems: NavigationItem[] = [
   { label: "Painel", path: "/", icon: LayoutDashboard, tool: "dashboard" },
+  { label: "Orientações", path: "/orientacoes", icon: BookOpenCheck, tool: "dashboard" },
   { label: "Meus Alunos", path: "/students", icon: Users, tool: "students" },
   { label: "Atendimentos", path: "/appointments", icon: CalendarDays, tool: "appointments" },
   { label: "Relatórios", path: "/behavior-records", icon: Activity, tool: "behavior_records" },
@@ -33,7 +35,7 @@ export const navigationItems: NavigationItem[] = [
   { label: "PAEE e Metas", path: "/goals", icon: Target, tool: "goals" },
   { label: "Estudos de Caso IA", path: "/case-studies", icon: Sparkles, tool: "ai_case_studies" },
   { label: "Histórico de Estudos", path: "/reports", icon: FileText, tool: "reports" },
-  { label: "Analytics", path: "/analytics", icon: BarChart3, tool: "analytics" },
+  { label: "Métricas e análise", path: "/analytics", icon: BarChart3, tool: "analytics" },
   { label: "Profissionais", path: "/admin/professionals", icon: UserCheck, tool: "admin_professionals" },
   ...(isPilotMode
     ? [{ label: "Feedback do piloto", path: "/pilot-feedback", icon: MessageSquareText, tool: "pilot_feedback" as ToolAccess }]

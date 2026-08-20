@@ -24,6 +24,11 @@ class StudentProgressReportBase(BaseModel):
     autonomy_functionality: str | None = Field(default=None, max_length=20_000)
     family_school_notes: str | None = Field(default=None, max_length=20_000)
     next_steps: str | None = Field(default=None, max_length=20_000)
+    participation_level: int | None = Field(default=None, ge=1, le=5)
+    autonomy_level: int | None = Field(default=None, ge=1, le=5)
+    communication_level: int | None = Field(default=None, ge=1, le=5)
+    regulation_level: int | None = Field(default=None, ge=1, le=5)
+    support_level: int | None = Field(default=None, ge=1, le=5)
 
     @model_validator(mode="after")
     def validate_period(self):
@@ -61,6 +66,11 @@ class StudentProgressReportUpdate(BaseModel):
     autonomy_functionality: str | None = Field(default=None, max_length=20_000)
     family_school_notes: str | None = Field(default=None, max_length=20_000)
     next_steps: str | None = Field(default=None, max_length=20_000)
+    participation_level: int | None = Field(default=None, ge=1, le=5)
+    autonomy_level: int | None = Field(default=None, ge=1, le=5)
+    communication_level: int | None = Field(default=None, ge=1, le=5)
+    regulation_level: int | None = Field(default=None, ge=1, le=5)
+    support_level: int | None = Field(default=None, ge=1, le=5)
 
 
 class StudentProgressReportReview(BaseModel):

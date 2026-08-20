@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+const indicatorLevel = z.number().int().min(1).max(5).optional()
+
 export const studentProgressReportSchema = z.object({
   professional_type: z.enum(["aee", "support"]),
   report_type: z.enum(["daily", "weekly"]),
@@ -16,6 +18,11 @@ export const studentProgressReportSchema = z.object({
   autonomy_functionality: z.string().max(20_000).optional(),
   family_school_notes: z.string().max(20_000).optional(),
   next_steps: z.string().max(20_000).optional(),
+  participation_level: indicatorLevel,
+  autonomy_level: indicatorLevel,
+  communication_level: indicatorLevel,
+  regulation_level: indicatorLevel,
+  support_level: indicatorLevel,
 }).superRefine((data, context) => {
   const start = new Date(`${data.period_start}T00:00:00`)
   const end = new Date(`${data.period_end}T00:00:00`)

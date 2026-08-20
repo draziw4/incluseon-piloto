@@ -44,6 +44,14 @@ const supportFields = [
   ["next_steps", "Pontos para acompanhamento", "O que precisa ser retomado ou observado no próximo dia?"],
 ] as const
 
+const indicatorFields = [
+  ["participation_level", "Participação", "1 = não participa", "5 = participa com constância"],
+  ["autonomy_level", "Autonomia", "1 = apoio integral", "5 = realiza com independência"],
+  ["communication_level", "Comunicação funcional", "1 = comunicação muito restrita", "5 = comunica-se em diferentes contextos"],
+  ["regulation_level", "Autorregulação", "1 = necessita mediação constante", "5 = regula-se com independência"],
+  ["support_level", "Necessidade de apoio", "1 = apoio ocasional", "5 = apoio contínuo e intensivo"],
+] as const
+
 export function StudentProgressReportModal({ studentId, open, report, professionalType, onClose }: Props) {
   const [actionError, setActionError] = useState<string | null>(null)
   const { createMutation, updateMutation } = useStudentProgressReportMutations(studentId)
@@ -81,6 +89,11 @@ export function StudentProgressReportModal({ studentId, open, report, profession
         autonomy_functionality: report.autonomy_functionality ?? "",
         family_school_notes: report.family_school_notes ?? "",
         next_steps: report.next_steps ?? "",
+        participation_level: report.participation_level ?? undefined,
+        autonomy_level: report.autonomy_level ?? undefined,
+        communication_level: report.communication_level ?? undefined,
+        regulation_level: report.regulation_level ?? undefined,
+        support_level: report.support_level ?? undefined,
       })
       return
     }
@@ -102,6 +115,11 @@ export function StudentProgressReportModal({ studentId, open, report, profession
       autonomy_functionality: "",
       family_school_notes: "",
       next_steps: "",
+      participation_level: undefined,
+      autonomy_level: undefined,
+      communication_level: undefined,
+      regulation_level: undefined,
+      support_level: undefined,
     })
   }, [effectiveProfessionalType, open, report, reset])
 
@@ -185,6 +203,30 @@ export function StudentProgressReportModal({ studentId, open, report, profession
             required
           />
 
+          <section className="rounded-2xl border border-cyan-200 bg-cyan-50/70 p-5">
+            <div>
+              <h3 className="font-bold text-cyan-950">Indicadores para métricas e análise</h3>
+              <p className="mt-1 text-sm leading-6 text-cyan-800">
+                Preenchimento recomendado. Use a escala de 1 a 5 com base no que foi observado neste período, sem transformar o indicador em diagnóstico.
+              </p>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+              {indicatorFields.map(([name, label, lowLabel, highLabel]) => (
+                <IndicatorField
+                  key={name}
+                  label={label}
+                  lowLabel={lowLabel}
+                  highLabel={highLabel}
+                  error={errors[name]?.message}
+                  register={register(name, {
+                    setValueAs: (value) => value === "" ? undefined : Number(value),
+                  })}
+                />
+              ))}
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {optionalFields.map(([name, label, placeholder]) => (
               <TextAreaField
@@ -219,6 +261,20 @@ function TextAreaField({ label, placeholder, error, register, required = false }
       <label className="mb-1 block text-sm font-medium text-zinc-700">{label}{required ? " *" : ""}</label>
       <textarea {...register} placeholder={placeholder} className="min-h-32 w-full rounded-xl border border-blue-100 px-4 py-3 text-sm outline-none focus:border-blue-500" />
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+    </div>
+  )
+}
+
+function IndicatorField({ label, lowLabel, highLabel, error, register }: { label: string; lowLabel: string; highLabel: string; error?: string; register: Record<string, unknown> }) {
+  return (
+    <div className="rounded-xl bg-white p-4 shadow-sm">
+      <label className="block text-sm font-semibold text-cyan-950">{label}</label>
+      <select {...register} defaultValue="" className="mt-3 w-full rounded-xl border border-cyan-200 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-500">
+        <option value="">Não informado</option>
+        {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
+      </select>
+      <p className="mt-2 text-xs leading-4 text-cyan-700">{lowLabel}<br />{highLabel}</p>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   )
 }

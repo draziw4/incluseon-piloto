@@ -23,6 +23,11 @@ export type StudentProgressReport = {
   autonomy_functionality: string | null
   family_school_notes: string | null
   next_steps: string | null
+  participation_level: number | null
+  autonomy_level: number | null
+  communication_level: number | null
+  regulation_level: number | null
+  support_level: number | null
   review_status: StudentProgressReviewStatus | null
   review_notes: string | null
   reviewed_by_id: number | null
