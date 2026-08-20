@@ -17,7 +17,8 @@ from dependencies import get_current_user
 from models.models import (
     User,
     BehaviorRecord,
-    Assessment
+    Assessment,
+    StudentProgressReport,
 )
 
 from schemas.timeline import TimelineItem
@@ -71,7 +72,7 @@ async def get_student_timeline(
         timeline.append(
             TimelineItem(
                 type="behavior_record",
-                title="Registro ABA",
+                title="Registro de observação comportamental",
                 description=record.behavior,
                 created_at=record.created_at,
                 metadata={
@@ -113,6 +114,30 @@ async def get_student_timeline(
             )
         )
 
+    progress_report_result = await db.execute(
+        select(StudentProgressReport).where(
+            StudentProgressReport.student_id == student.id
+        )
+    )
+    progress_reports = progress_report_result.scalars().all()
+
+    for report in progress_reports:
+        timeline.append(
+            TimelineItem(
+                type="progress_report",
+                title=report.title,
+                description=report.summary,
+                created_at=report.created_at,
+                metadata={
+                    "report_id": report.id,
+                    "report_type": report.report_type,
+                    "period_start": report.period_start.isoformat(),
+                    "period_end": report.period_end.isoformat(),
+                    "created_by_name": report.created_by_name,
+                },
+            )
+        )
+
     timeline.sort(
         key=lambda item: item.created_at,
         reverse=True
@@ -128,8 +153,8 @@ def format_assessment_description(
         "parent_interview": "Entrevista com responsáveis",
         "student_assessment": "Avaliação do estudante",
         "school_interview": "Entrevista com equipe escolar",
-        "cognitive_assessment": "Avaliação cognitiva",
-        "pei": "Plano Educacional Individualizado"
+        "cognitive_assessment": "Avaliação cognitiva (registro legado)",
+        "pei": "PEI (registro legado)"
     }
 
     return labels.get(

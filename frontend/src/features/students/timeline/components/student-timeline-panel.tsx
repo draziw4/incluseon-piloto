@@ -18,7 +18,7 @@ export function StudentTimelinePanel({ studentId }: Props) {
         <h2 className="text-xl font-bold text-blue-950">Timeline do aluno</h2>
 
         <p className="text-sm text-zinc-500">
-          Visualize avaliações, registros ABA e eventos importantes em ordem
+          Visualize avaliações, relatórios, observações comportamentais e eventos importantes em ordem
           cronológica.
         </p>
       </div>
@@ -62,7 +62,7 @@ export function StudentTimelinePanel({ studentId }: Props) {
 
           <p className="mt-1 max-w-md text-sm text-zinc-500">
             A timeline será preenchida automaticamente quando forem cadastrados
-            registros ABA, entrevistas e avaliações.
+            relatórios, observações comportamentais, entrevistas e avaliações.
           </p>
         </div>
       )}

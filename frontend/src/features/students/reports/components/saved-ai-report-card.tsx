@@ -32,7 +32,7 @@ export function SavedAIReportCard({
             <FileText size={18} />
 
             <span className="text-sm font-semibold">
-              Relatório IA
+              Estudo de caso com IA
             </span>
           </div>
 

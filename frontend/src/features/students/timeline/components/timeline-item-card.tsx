@@ -14,16 +14,18 @@ type Props = {
 
 const timelineIcons: Record<string, LucideIcon> = {
   behavior_record: Activity,
+  progress_report: FileText,
   assessment: Brain,
   report: FileText,
   ai_report: Sparkles
 }
 
 const timelineLabels: Record<string, string> = {
-  behavior_record: "Registro ABA",
+  behavior_record: "Observação comportamental",
+  progress_report: "Relatório diário/semanal",
   assessment: "Avaliação / Entrevista",
   report: "Relatório",
-  ai_report: "Relatório IA"
+  ai_report: "Estudo de caso"
 }
 
 export function TimelineItemCard({ item }: Props) {

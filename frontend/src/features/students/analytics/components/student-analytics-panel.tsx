@@ -61,14 +61,14 @@ export function StudentAnalyticsPanel({
           </h2>
 
           <p className="text-sm text-zinc-500">
-            Métricas geradas a partir dos registros ABA do aluno.
+            Métricas geradas a partir das observações comportamentais do aluno.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           <AnalyticsSummaryCard
             icon={<Activity size={20} />}
-            title="Registros ABA"
+            title="Observações"
             value={String(data.records_count)}
             description="eventos registrados"
           />
@@ -103,7 +103,7 @@ export function StudentAnalyticsPanel({
       <section className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
         <ChartCard
           title="Evolução da intensidade"
-          description="Mostra como a intensidade dos registros ABA varia ao longo do tempo."
+          description="Mostra como a intensidade das observações varia ao longo do tempo."
         >
           {data.intensity_evolution.length > 0 ? (
             <ResponsiveContainer
@@ -220,8 +220,8 @@ export function StudentAnalyticsPanel({
 
         {data.records_count === 0 ? (
           <div className="rounded-2xl bg-blue-50/60 p-6 text-sm text-zinc-600">
-            Ainda não há registros ABA suficientes para gerar uma análise
-            comportamental. Cadastre registros para visualizar métricas do aluno.
+            Ainda não há observações suficientes para gerar uma análise
+            comportamental. Cadastre observações para visualizar métricas do aluno.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -229,7 +229,7 @@ export function StudentAnalyticsPanel({
               title="Frequência de registros"
               description={`O aluno possui ${data.records_count} registro${
                 data.records_count === 1 ? "" : "s"
-              } ABA cadastrado${
+              } de observação cadastrado${
                 data.records_count === 1 ? "" : "s"
               } no sistema.`}
             />

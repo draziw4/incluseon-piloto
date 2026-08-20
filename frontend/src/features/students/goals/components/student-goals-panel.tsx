@@ -43,9 +43,9 @@ export function StudentGoalsPanel({ studentId, canManage }: Props) {
       <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-blue-600"><Target size={20} /><span className="text-sm font-semibold">PEI e metas</span></div>
-            <h2 className="text-xl font-bold text-blue-950">Plano individualizado</h2>
-            <p className="mt-1 text-sm text-zinc-500">Acompanhe objetivos, prazos, progresso e evidências de evolução.</p>
+            <div className="mb-2 flex items-center gap-2 text-blue-600"><Target size={20} /><span className="text-sm font-semibold">PAEE e metas</span></div>
+            <h2 className="text-xl font-bold text-blue-950">Plano de Atendimento Educacional Especializado</h2>
+            <p className="mt-1 text-sm text-zinc-500">Elabore o PAEE com base no estudo de caso. O PEI da sala regular é produzido posteriormente pelo professor, com base no PAEE.</p>
           </div>
 
           {canManage && (
@@ -64,7 +64,7 @@ export function StudentGoalsPanel({ studentId, canManage }: Props) {
         <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-sm">
           <Flag size={28} className="text-blue-600" />
           <h3 className="mt-3 font-bold text-blue-950">Nenhuma meta cadastrada</h3>
-          <p className="mt-1 max-w-md text-sm text-zinc-500">Crie metas para transformar avaliações e registros em um plano de acompanhamento.</p>
+          <p className="mt-1 max-w-md text-sm text-zinc-500">Crie metas após revisar o estudo de caso, transformando necessidades e potencialidades em ações do PAEE.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">

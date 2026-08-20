@@ -62,7 +62,7 @@ export function StudentProfessionalCard({
         />
 
         <PermissionItem
-          label="Registrar ABA"
+          label="Registrar observações"
           enabled={professional.can_register_aba}
         />
 
@@ -72,7 +72,7 @@ export function StudentProfessionalCard({
         />
 
         <PermissionItem
-          label="Criar PEI"
+          label="Criar PAEE"
           enabled={professional.can_create_pei}
         />
 

@@ -428,7 +428,7 @@ async def seed():
         print(f"Senha: {DEMO_PASSWORD}")
         print(f"\nAluno criado/atualizado: {student.name}")
         print(f"ID do aluno: {student.id}")
-        print("\nRegistros ABA criados: 12")
+        print("\nObservações comportamentais criadas: 12")
         print("\nDados preparados para gráficos:")
         print("- Evolução da intensidade")
         print("- Registros por ambiente")

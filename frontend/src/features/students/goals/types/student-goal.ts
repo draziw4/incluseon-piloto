@@ -4,7 +4,7 @@ export type StudentGoalPriority = "low" | "medium" | "high"
 export type StudentGoal = {
   id: number
   student_id: number
-  created_by_id: number
+  created_by_id: number | null
   title: string
   description?: string | null
   area: string

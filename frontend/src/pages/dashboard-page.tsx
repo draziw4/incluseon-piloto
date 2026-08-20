@@ -68,7 +68,7 @@ export function DashboardPage() {
         />
 
         {hasTool(user, "behavior_records") ? <DashboardCard
-          title="Registros ABA"
+          title="Observações registradas"
           value={isLoadingDashboard ? "..." : String(metrics?.behavior_records_last_7_days ?? 0)}
           subtitle="nos últimos 7 dias"
           icon={<Activity size={22} />}
@@ -82,7 +82,7 @@ export function DashboardPage() {
         /> : null}
 
         {hasTool(user, "reports") ? <DashboardCard
-          title="Relatórios IA"
+          title="Estudos de caso"
           value={isLoadingDashboard ? "..." : String(metrics?.ai_reports_count ?? 0)}
           subtitle="estudos de caso gerados"
           icon={<FileText size={22} />}
@@ -140,7 +140,7 @@ export function DashboardPage() {
 
             {hasTool(user, "behavior_records") ? <QuickAction
               icon={<Activity size={20} />}
-              title={hasTool(user, "behavior_entry") ? "Registro ABA" : "Acompanhamento"}
+              title={hasTool(user, "behavior_entry") ? "Nova observação" : "Acompanhamento"}
               subtitle={hasTool(user, "behavior_entry") ? "Nova ocorrência" : "Consultar registros"}
               color="bg-emerald-50 text-emerald-700"
               to="/behavior-records"

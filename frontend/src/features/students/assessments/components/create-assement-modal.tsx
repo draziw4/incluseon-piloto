@@ -1,260 +1,279 @@
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { AlertCircle, ClipboardList } from "lucide-react"
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle } from "lucide-react";
-import { getApiErrorMessage } from "@/routes/utils/get-api-error-message";
-import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
-import type { Assessment } from "../types/assessment";
+import { api } from "@/api/client"
+import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
+
+import type { Assessment } from "../types/assessment"
+import {
+  getInstrumentDefinition,
+  instrumentDefinitions,
+  instrumentTypes,
+  type InstrumentAnswer,
+  type InstrumentField,
+  type InstrumentType,
+} from "../instrument-definitions"
 import {
   createAssessmentSchema,
   type CreateAssessmentData,
   type CreateAssessmentFormData,
-} from "../schemas/create-assessment-schema";
-
-import { useCreateAssessment } from "../hooks/use-create-assessment";
+} from "../schemas/create-assessment-schema"
+import { useCreateAssessment } from "../hooks/use-create-assessment"
 
 type Props = {
-  studentId: string;
-  open: boolean;
-  onClose: () => void;
-  assessment?: Assessment | null;
-};
+  studentId: string
+  open: boolean
+  onClose: () => void
+  assessment?: Assessment | null
+}
+
+const emptyForm: CreateAssessmentFormData = {
+  title: "",
+  assessment_type: "" as InstrumentType,
+  assessment_data: {},
+}
 
 export function CreateAssessmentModal({ studentId, open, onClose, assessment }: Props) {
-  const mutation = useCreateAssessment(studentId);
-  const queryClient = useQueryClient();
+  const mutation = useCreateAssessment(studentId)
+  const queryClient = useQueryClient()
+  const [actionError, setActionError] = useState<string | null>(null)
+
   const updateMutation = useMutation({
-    mutationFn: (data: CreateAssessmentData) => api.patch(`/assessments/student/${studentId}/${assessment?.id}`, {
-      title: data.title,
-      assessment_type: data.assessment_type,
-      assessment_data: Object.fromEntries(Object.entries(data).filter(([key]) => !["title", "assessment_type"].includes(key)))
-    }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["assessments", studentId] })
-  });
-  const [actionError, setActionError] = useState<string | null>(null);
+    mutationFn: (data: CreateAssessmentData) =>
+      api.patch(`/assessments/student/${studentId}/${assessment?.id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["assessments", studentId] }),
+  })
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<CreateAssessmentFormData, unknown, CreateAssessmentData>({
     resolver: zodResolver(createAssessmentSchema),
-  });
+    defaultValues: emptyForm,
+  })
+
+  const selectedType = useWatch({ control, name: "assessment_type" })
+  const answers = useWatch({ control, name: "assessment_data" }) ?? {}
+  const definition = getInstrumentDefinition(selectedType)
 
   useEffect(() => {
-    if (open && assessment) reset({ title: assessment.title, assessment_type: assessment.assessment_type, ...assessment.assessment_data });
-    if (open && !assessment) reset({});
-  }, [open, assessment, reset]);
+    if (!open) return
+
+    if (assessment && getInstrumentDefinition(assessment.assessment_type)) {
+      reset({
+        title: assessment.title,
+        assessment_type: assessment.assessment_type as InstrumentType,
+        assessment_data: assessment.assessment_data as Record<string, InstrumentAnswer>,
+      })
+      return
+    }
+
+    reset(emptyForm)
+  }, [open, assessment, reset])
+
+  function handleTypeChange(nextType: InstrumentType) {
+    setValue("assessment_type", nextType, { shouldValidate: true })
+    setValue("assessment_data", {})
+    setValue("title", instrumentDefinitions[nextType].defaultTitle, { shouldValidate: true })
+  }
 
   async function onSubmit(data: CreateAssessmentData) {
     try {
-      setActionError(null);
+      setActionError(null)
 
-      if (assessment) await updateMutation.mutateAsync(data);
-      else await mutation.mutateAsync({ studentId, data });
+      const activeDefinition = getInstrumentDefinition(data.assessment_type)
+      const sanitizedAnswers = Object.fromEntries(
+        (activeDefinition?.sections.flatMap((section) => section.fields) ?? [])
+          .filter((field) => shouldShowField(field, data.assessment_data))
+          .map((field) => [field.name, data.assessment_data[field.name]])
+          .filter(([, answer]) => Array.isArray(answer) ? answer.length > 0 : typeof answer === "string" && answer.trim().length > 0),
+      )
+      const payload = { ...data, assessment_data: sanitizedAnswers }
 
-      reset();
-      onClose();
+      if (assessment) await updateMutation.mutateAsync(payload)
+      else await mutation.mutateAsync({ studentId, data: payload })
+
+      reset(emptyForm)
+      onClose()
     } catch (error) {
-      setActionError(getApiErrorMessage(error));
+      setActionError(getApiErrorMessage(error))
     }
   }
-  if (!open) return null;
+
+  if (!open) return null
+
+  const isSaving = mutation.isPending || updateMutation.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-6 flex items-start justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-5">
+      <div className="max-h-[94vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-blue-100 bg-white px-6 py-5">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
-              {assessment ? "Editar avaliação / entrevista" : "Nova avaliação / entrevista"}
+              {assessment ? "Editar instrumental" : "Novo instrumental"}
             </h2>
-
-            <p className="text-sm text-zinc-500">
-              Registre informações clínicas, pedagógicas e familiares do aluno.
+            <p className="mt-1 text-sm text-zinc-500">
+              Selecione o tipo para exibir somente o formulário correspondente.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100"
-          >
+          <button type="button" onClick={onClose} className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100">
             Fechar
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
           {actionError && (
-            <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={18} className="mt-0.5 shrink-0" />
-
-                <p>{actionError}</p>
-              </div>
+            <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <p>{actionError}</p>
             </div>
           )}
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Título
+
+          <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+            <label className="mb-2 block text-sm font-semibold text-blue-950" htmlFor="instrument-type">
+              Instrumental
             </label>
-
-            <input
-              {...register("title")}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
-              placeholder="Ex: Entrevista inicial com responsáveis"
-            />
-
-            {errors.title && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.title.message}
-              </p>
-            )}
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Tipo
-            </label>
-
             <select
-              {...register("assessment_type")}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+              id="instrument-type"
+              value={selectedType ?? ""}
+              disabled={Boolean(assessment)}
+              onChange={(event) => handleTypeChange(event.target.value as InstrumentType)}
+              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500 disabled:bg-zinc-100"
             >
               <option value="">Selecione</option>
-              <option value="parent_interview">
-                Entrevista com responsáveis
-              </option>
-              <option value="student_assessment">Avaliação do estudante</option>
-              <option value="school_interview">
-                Entrevista com equipe escolar
-              </option>
-              <option value="cognitive_assessment">Avaliação cognitiva</option>
-              <option value="pei">PEI</option>
+              {instrumentTypes.map((type) => (
+                <option key={type} value={type}>{instrumentDefinitions[type].label}</option>
+              ))}
             </select>
+            {errors.assessment_type && <p className="mt-1 text-sm text-red-500">{errors.assessment_type.message}</p>}
+            {definition && <p className="mt-2 text-sm text-blue-800">{definition.description}</p>}
+          </section>
 
-            {errors.assessment_type && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.assessment_type.message}
-              </p>
-            )}
-          </div>
+          {definition && (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700" htmlFor="instrument-title">Título do registro</label>
+                <input
+                  id="instrument-title"
+                  {...register("title")}
+                  className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+                />
+                {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
+              </div>
 
-          <TextArea
-            label="Histórico do estudante"
-            placeholder="Resumo do desenvolvimento, escolarização, saúde, rotina..."
-            register={register("student_history")}
-          />
+              {definition.sections.map((section) => (
+                <section key={section.title} className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+                  <div className="mb-5 flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <ClipboardList size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-blue-950">{section.title}</h3>
+                      {section.description && <p className="mt-1 text-sm text-zinc-500">{section.description}</p>}
+                    </div>
+                  </div>
 
-          <TextArea
-            label="Contexto familiar"
-            placeholder="Informações da entrevista com pais ou responsáveis."
-            register={register("family_context")}
-          />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {section.fields.map((field) =>
+                      shouldShowField(field, answers) ? (
+                        <InstrumentInput key={field.name} field={field} register={register} />
+                      ) : null,
+                    )}
+                  </div>
+                </section>
+              ))}
 
-          <TextArea
-            label="Contexto escolar"
-            placeholder="Como o estudante participa das atividades escolares?"
-            register={register("school_context")}
-          />
+              {errors.assessment_data && (
+                <p className="text-sm text-red-500">Preencha ao menos uma resposta do instrumental.</p>
+              )}
+            </>
+          )}
 
-          <TextArea
-            label="Aspectos cognitivos"
-            placeholder="Atenção, memória, percepção, linguagem, raciocínio..."
-            register={register("cognitive_notes")}
-          />
-
-          <TextArea
-            label="Comunicação"
-            placeholder="Fala, gestos, comunicação alternativa, compreensão..."
-            register={register("communication_notes")}
-          />
-
-          <TextArea
-            label="Socialização"
-            placeholder="Interação com colegas, adultos, participação..."
-            register={register("social_notes")}
-          />
-
-          <TextArea
-            label="Aspectos motores"
-            placeholder="Coordenação motora, locomoção, equilíbrio, lateralidade..."
-            register={register("motor_notes")}
-          />
-
-          <TextArea
-            label="Aspectos emocionais"
-            placeholder="Autorregulação, ansiedade, frustração, vínculo afetivo..."
-            register={register("emotional_notes")}
-          />
-
-          <TextArea
-            label="Dificuldades observadas"
-            placeholder="Quais dificuldades são mais relevantes?"
-            register={register("difficulties")}
-          />
-
-          <TextArea
-            label="Potencialidades"
-            placeholder="Interesses, habilidades, pontos fortes, reforçadores..."
-            register={register("strengths")}
-          />
-
-          <div className="md:col-span-2">
-            <TextArea
-              label="Apoios recomendados"
-              placeholder="Adaptações, recursos, estratégias pedagógicas, comunicação visual..."
-              register={register("recommended_supports")}
-            />
-          </div>
-
-          <div className="mt-2 flex justify-end gap-3 md:col-span-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50"
-            >
+          <div className="sticky bottom-0 flex justify-end gap-3 border-t border-blue-100 bg-white py-4">
+            <button type="button" onClick={onClose} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50">
               Cancelar
             </button>
-
             <button
               type="submit"
-              disabled={mutation.isPending || updateMutation.isPending}
-              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={!definition || isSaving}
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {mutation.isPending || updateMutation.isPending ? "Salvando..." : "Salvar avaliação"}
+              {isSaving ? "Salvando..." : "Salvar instrumental"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  )
 }
 
-type TextAreaProps = {
-  label: string;
-  placeholder?: string;
-  register: Record<string, unknown>;
-};
+function shouldShowField(field: InstrumentField, answers: Record<string, InstrumentAnswer>) {
+  if (!field.showWhen) return true
 
-function TextArea({ label, placeholder, register }: TextAreaProps) {
+  const currentValue = answers[field.showWhen.field]
+  if (field.showWhen.equals) return currentValue === field.showWhen.equals
+  if (field.showWhen.includes) return Array.isArray(currentValue) && currentValue.includes(field.showWhen.includes)
+  return true
+}
+
+type InstrumentInputProps = {
+  field: InstrumentField
+  register: ReturnType<typeof useForm<CreateAssessmentFormData>>["register"]
+}
+
+function InstrumentInput({ field, register }: InstrumentInputProps) {
+  const fieldName = `assessment_data.${field.name}` as const
+  const fullWidth = field.type === "textarea" || field.type === "checkbox-group"
+
   return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-zinc-700">
-        {label}
-      </label>
+    <div className={fullWidth ? "md:col-span-2" : undefined}>
+      <label className="mb-1 block text-sm font-medium text-zinc-700">{field.label}</label>
 
-      <textarea
-        {...register}
-        className="min-h-28 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
-        placeholder={placeholder}
-      />
+      {field.type === "textarea" && (
+        <textarea
+          {...register(fieldName)}
+          className="min-h-28 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+          placeholder={field.placeholder}
+        />
+      )}
+
+      {["text", "date", "number"].includes(field.type) && (
+        <input
+          {...register(fieldName)}
+          type={field.type}
+          min={field.type === "number" ? 0 : undefined}
+          className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+          placeholder={field.placeholder}
+        />
+      )}
+
+      {field.type === "select" && (
+        <select {...register(fieldName)} className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500">
+          <option value="">Selecione</option>
+          {field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      )}
+
+      {field.type === "checkbox-group" && (
+        <div className="grid grid-cols-1 gap-2 rounded-xl border border-blue-100 p-4 sm:grid-cols-2">
+          {field.options?.map((option) => (
+            <label key={option.value} className="flex items-center gap-2 text-sm text-zinc-700">
+              <input type="checkbox" value={option.value} {...register(fieldName)} className="h-4 w-4 rounded border-blue-200 text-blue-600" />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {field.helpText && <p className="mt-1 text-xs text-zinc-500">{field.helpText}</p>}
     </div>
-  );
+  )
 }

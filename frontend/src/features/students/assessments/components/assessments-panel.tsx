@@ -39,11 +39,11 @@ const assessments = Array.isArray(data)
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h2 className="text-xl font-bold text-blue-950">
-            Avaliações e entrevistas
+            Instrumentais do estudo de caso
           </h2>
 
           <p className="text-sm text-zinc-500">
-            Registre entrevistas, instrumentos avaliativos e informações do PEI.
+            Preencha a entrevista com responsáveis, a entrevista com a equipe escolar e a avaliação do estudante.
           </p>
         </div>
 
@@ -52,7 +52,7 @@ const assessments = Array.isArray(data)
           className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={18} />
-          Nova avaliação
+          Novo instrumental
         </button>
       </div>
 
@@ -88,18 +88,18 @@ const assessments = Array.isArray(data)
           </div>
 
           <h3 className="text-lg font-bold text-blue-950">
-            Nenhuma avaliação registrada
+            Nenhum instrumental registrado
           </h3>
 
           <p className="mt-1 max-w-md text-sm text-zinc-500">
-            Cadastre entrevistas e avaliações para construir o perfil global do aluno.
+            Os três instrumentais formam a base de evidências para o estudo de caso e, depois, para o PAEE.
           </p>
 
           <button
             onClick={() => { setEditingAssessment(null); setOpenModal(true) }}
             className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
           >
-            + Criar primeira avaliação
+            + Criar primeiro instrumental
           </button>
         </div>
       )}

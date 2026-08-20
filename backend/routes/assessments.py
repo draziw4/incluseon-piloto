@@ -20,6 +20,10 @@ from services.permissions_service import (
     require_student_permission,
     require_student_access
 )
+from services.assessment_instruments import (
+    INSTRUMENT_TYPE_LABELS,
+    has_meaningful_answers,
+)
 
 from models.models import (
     User,
@@ -38,6 +42,20 @@ router = APIRouter(
     tags=["Assessments"],
     dependencies=[Depends(require_tool(ToolAccess.ASSESSMENTS))],
 )
+
+
+def validate_instrument_payload(assessment_type: str, assessment_data: dict) -> None:
+    if assessment_type not in INSTRUMENT_TYPE_LABELS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Selecione um dos três instrumentais disponíveis: responsáveis, equipe escolar ou avaliação do estudante.",
+        )
+
+    if not has_meaningful_answers(assessment_data):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Preencha ao menos uma resposta do instrumental.",
+        )
 
 
 @router.post(
@@ -64,6 +82,7 @@ async def create_assessment(
         student_id=student_id,
         permission="can_create_assessment"
     )
+    validate_instrument_payload(data.assessment_type, data.assessment_data)
 
     assessment = Assessment(
         student_id=student.id,
@@ -134,6 +153,9 @@ async def update_assessment(
 ):
     await require_student_permission(db, current_user, student_id, "can_create_assessment")
     assessment = await get_assessment_or_404(db, student_id, assessment_id)
+    effective_type = data.assessment_type or assessment.assessment_type
+    effective_data = data.assessment_data if data.assessment_data is not None else assessment.assessment_data
+    validate_instrument_payload(effective_type, effective_data)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(assessment, key, value)
     await db.commit()

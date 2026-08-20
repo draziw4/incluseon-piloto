@@ -26,7 +26,7 @@ AdminUser = Annotated[User, Depends(require_role([UserRole.ADMIN]))]
 
 def feedback_response(
     feedback: PilotFeedback,
-    author: User,
+    author: User | None,
     include_email: bool,
 ) -> PilotFeedbackResponse:
     return PilotFeedbackResponse(
@@ -38,8 +38,8 @@ def feedback_response(
         expected_result=feedback.expected_result,
         status=feedback.status,
         admin_note=feedback.admin_note,
-        author_name=author.name,
-        author_email=author.email if include_email else None,
+        author_name=author.name if author else "Profissional removido",
+        author_email=author.email if author and include_email else None,
         created_at=feedback.created_at,
         updated_at=feedback.updated_at,
     )
@@ -69,7 +69,7 @@ async def list_pilot_feedback(
 ):
     query = (
         select(PilotFeedback, User)
-        .join(User, User.id == PilotFeedback.created_by_id)
+        .outerjoin(User, User.id == PilotFeedback.created_by_id)
         .order_by(PilotFeedback.created_at.desc())
         .limit(200)
     )
@@ -93,7 +93,7 @@ async def update_pilot_feedback(
 ):
     result = await db.execute(
         select(PilotFeedback, User)
-        .join(User, User.id == PilotFeedback.created_by_id)
+        .outerjoin(User, User.id == PilotFeedback.created_by_id)
         .where(PilotFeedback.id == feedback_id)
     )
     row = result.first()

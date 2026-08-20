@@ -32,7 +32,7 @@ export type Appointment = {
   id: number
 
   student_id: number
-  professional_id: number
+  professional_id: number | null
 
   appointment_type: AppointmentType
   status: AppointmentStatus

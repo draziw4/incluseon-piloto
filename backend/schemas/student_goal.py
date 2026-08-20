@@ -52,6 +52,6 @@ class StudentGoalResponse(StudentGoalBase):
 
     id: int
     student_id: int
-    created_by_id: int
+    created_by_id: int | None
     created_at: datetime
     updated_at: datetime

@@ -133,7 +133,7 @@ export function EditStudentProfessionalModal({
             />
 
             <PermissionCheckbox
-              label="Registrar ABA"
+              label="Registrar observações"
               inputProps={register("can_register_aba")}
               disabled={!isStudentPermissionAllowed(professional.user?.allowed_tools, "can_register_aba")}
             />
@@ -145,7 +145,7 @@ export function EditStudentProfessionalModal({
             />
 
             <PermissionCheckbox
-              label="Criar PEI"
+              label="Criar PAEE"
               inputProps={register("can_create_pei")}
               disabled={!isStudentPermissionAllowed(professional.user?.allowed_tools, "can_create_pei")}
             />

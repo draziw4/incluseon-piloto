@@ -61,7 +61,7 @@ export function StudentGoalModal({ open, studentId, goal, onClose }: Props) {
       <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-blue-950">{isEditing ? "Editar meta PEI" : "Nova meta PEI"}</h2>
+            <h2 className="text-2xl font-bold text-blue-950">{isEditing ? "Editar meta do PAEE" : "Nova meta do PAEE"}</h2>
             <p className="mt-1 text-sm text-zinc-500">Defina objetivo, prazo, progresso e evidências de acompanhamento.</p>
           </div>
           <button type="button" onClick={handleClose} className="rounded-xl px-3 py-2 text-sm text-zinc-500 hover:bg-zinc-100">Fechar</button>

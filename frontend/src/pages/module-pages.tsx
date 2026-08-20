@@ -8,7 +8,7 @@ export function BehaviorRecordsPage() {
   const { user } = useAuth()
   const canEnterRecords = hasTool(user, "behavior_entry")
 
-  return <ResourceHubPage title="Registros ABA" eyebrow="Acompanhamento comportamental" description={canEnterRecords ? "Registre antecedentes, comportamentos, consequências e estratégias utilizadas. Os registros pertencem ao contexto de um aluno, por isso a seleção acontece antes da edição." : "Acompanhe os registros inseridos pelos profissionais vinculados a cada aluno, sem alterar os dados de origem."} icon={Activity} tab="behavior" actionLabel={canEnterRecords ? "Ver e registrar" : "Acompanhar registros"} emptyHint="Escolha o aluno cujos registros comportamentais deseja acompanhar." />
+  return <ResourceHubPage title="Relatórios" eyebrow="Acompanhamento do estudante" description={canEnterRecords ? "Consulte os relatórios diários e semanais e registre observações comportamentais vinculadas ao aluno." : "Acompanhe os relatórios e as observações inseridas pelos profissionais vinculados, sem alterar os dados de origem."} icon={Activity} tab="behavior" actionLabel={canEnterRecords ? "Abrir relatórios" : "Acompanhar relatórios"} emptyHint="Escolha o aluno cujo histórico de acompanhamento deseja consultar." />
 }
 
 export function AssessmentsPage() {
@@ -20,7 +20,7 @@ export function InterviewsPage() {
 }
 
 export function GoalsPage() {
-  return <ResourceHubPage title="PEI e Metas" eyebrow="Plano individualizado" description="Organize objetivos, prazos, prioridades, progresso e evidências de evolução de cada aluno." icon={Target} tab="goals" actionLabel="Abrir PEI" emptyHint="Escolha o aluno para acompanhar seu plano individualizado." />
+  return <ResourceHubPage title="PAEE e Metas" eyebrow="Plano de Atendimento Educacional Especializado" description="Elabore o PAEE com base no estudo de caso. Depois, o professor da sala regular poderá usar o PAEE como referência para produzir o PEI." icon={Target} tab="goals" actionLabel="Abrir PAEE" emptyHint="Escolha o aluno para acompanhar o Plano de AEE." />
 }
 
 export function CaseStudiesPage() {
@@ -28,7 +28,7 @@ export function CaseStudiesPage() {
 }
 
 export function ReportsPage() {
-  return <ResourceHubPage title="Relatórios" eyebrow="Documentos e histórico" description="Consulte os relatórios gerados e seus documentos em PDF, sempre respeitando as permissões do vínculo profissional." icon={FileText} tab="reports" actionLabel="Ver relatórios" emptyHint="Escolha o aluno para acessar o histórico de relatórios." />
+  return <ResourceHubPage title="Histórico de Estudos" eyebrow="Documentos e histórico" description="Consulte os estudos de caso gerados e seus documentos em PDF, sempre respeitando as permissões do vínculo profissional." icon={FileText} tab="reports" actionLabel="Ver estudos" emptyHint="Escolha o aluno para acessar o histórico de estudos de caso." />
 }
 
 export function AnalyticsPage() {

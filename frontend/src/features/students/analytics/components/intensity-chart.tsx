@@ -39,7 +39,7 @@ export function IntensityChart({ records }: Props) {
         </h3>
 
         <p className="text-sm text-zinc-500">
-          Intensidade dos registros ABA ao longo do tempo.
+          Intensidade das observações comportamentais ao longo do tempo.
         </p>
       </div>
 

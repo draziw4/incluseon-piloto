@@ -8,6 +8,7 @@ from fastapi import (
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from typing import Annotated
 
@@ -20,6 +21,7 @@ from permissions import require_tool
 from dependencies import get_current_user
 
 from services.permissions_service import (
+    require_behavior_record_ownership,
     require_student_permission,
     require_student_access
 )
@@ -62,7 +64,9 @@ async def create_behavior_record(
 
     record = BehaviorRecord(
         student_id=student.id,
-        created_by_id=current_user.id,
+        created_by=current_user,
+        created_by_name=current_user.name,
+        created_by_role=current_user.role.value,
         **data.model_dump()
     )
 
@@ -130,6 +134,8 @@ async def get_behavior_records(
 
     query = select(
         BehaviorRecord
+    ).options(
+        selectinload(BehaviorRecord.created_by)
     ).where(
         BehaviorRecord.student_id == student.id
     )
@@ -176,9 +182,14 @@ async def get_behavior_records(
 
 
 async def get_record_or_404(db: AsyncSession, student_id: int, record_id: int):
-    record = await db.get(BehaviorRecord, record_id)
+    result = await db.execute(
+        select(BehaviorRecord)
+        .options(selectinload(BehaviorRecord.created_by))
+        .where(BehaviorRecord.id == record_id)
+    )
+    record = result.scalar_one_or_none()
     if not record or record.student_id != student_id:
-        raise HTTPException(status_code=404, detail="Registro ABA não encontrado")
+        raise HTTPException(status_code=404, detail="Observação comportamental não encontrada")
     return record
 
 
@@ -192,6 +203,7 @@ async def update_behavior_record(
 ):
     await require_student_permission(db, current_user, student_id, "can_register_aba")
     record = await get_record_or_404(db, student_id, record_id)
+    require_behavior_record_ownership(current_user, record.created_by_id)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(record, key, value)
     await db.commit()
@@ -208,5 +220,6 @@ async def delete_behavior_record(
 ):
     await require_student_permission(db, current_user, student_id, "can_register_aba")
     record = await get_record_or_404(db, student_id, record_id)
+    require_behavior_record_ownership(current_user, record.created_by_id)
     await db.delete(record)
     await db.commit()

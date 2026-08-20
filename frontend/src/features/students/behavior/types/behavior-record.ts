@@ -2,6 +2,13 @@ export type BehaviorRecord = {
   id: number
   student_id: number
   created_by_id?: number | null
+  created_by?: {
+    id: number
+    name: string
+    role: string
+  } | null
+  created_by_name?: string | null
+  created_by_role?: string | null
 
   antecedent: string
   behavior: string

@@ -7,6 +7,7 @@ import { BehaviorRecordCard } from "./behavior-record-card"
 import { CreateBehaviorRecordModal } from "./create-behavior-record-modal"
 import type { BehaviorRecord } from "../types/behavior-record"
 import { api } from "@/api/client"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useQueryClient } from "@tanstack/react-query"
 
 type Props = {
@@ -15,14 +16,21 @@ type Props = {
 }
 
 export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
+  const { user } = useAuth()
   const [openModal, setOpenModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState<BehaviorRecord | null>(null)
   const queryClient = useQueryClient()
 
   async function deleteRecord(record: BehaviorRecord) {
-    if (!window.confirm("Excluir este registro ABA? Esta ação não pode ser desfeita.")) return
+    if (!window.confirm("Excluir esta observação comportamental? Esta ação não pode ser desfeita.")) return
     await api.delete(`/behavior-records/student/${studentId}/${record.id}`)
     await queryClient.invalidateQueries({ queryKey: ["behavior-records", studentId] })
+  }
+
+  function canChangeRecord(record: BehaviorRecord) {
+    return canManage && (
+      user?.role !== "support_professional" || record.created_by_id === user.id
+    )
   }
 
   const {
@@ -36,7 +44,7 @@ export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h2 className="text-xl font-bold text-blue-950">
-            Registros ABA
+            Observações comportamentais
           </h2>
 
           <p className="text-sm text-zinc-500">
@@ -55,7 +63,7 @@ export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
 
       {isLoading && (
         <div className="rounded-2xl border border-blue-100 bg-white p-6 text-sm text-zinc-500">
-          Carregando registros ABA...
+          Carregando observações...
         </div>
       )}
 
@@ -71,8 +79,8 @@ export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
             <BehaviorRecordCard
               key={record.id}
               record={record}
-              onEdit={canManage ? () => { setEditingRecord(record); setOpenModal(true) } : undefined}
-              onDelete={canManage ? () => void deleteRecord(record) : undefined}
+              onEdit={canChangeRecord(record) ? () => { setEditingRecord(record); setOpenModal(true) } : undefined}
+              onDelete={canChangeRecord(record) ? () => void deleteRecord(record) : undefined}
             />
           ))}
         </div>
@@ -85,7 +93,7 @@ export function BehaviorRecordsPanel({ studentId, canManage }: Props) {
           </div>
 
           <h3 className="text-lg font-bold text-blue-950">
-            Nenhum registro ABA ainda
+            Nenhuma observação comportamental ainda
           </h3>
 
           <p className="mt-1 max-w-md text-sm text-zinc-500">

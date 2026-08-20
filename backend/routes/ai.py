@@ -38,10 +38,14 @@ from config import settings
 from services.pdf.pdf_generator import delete_generated_report, generate_case_study_pdf
 from services.ai.case_context import get_case_study_context
 from services.ai.prompt_builder import (
-    format_appointments,
     format_assessments,
-    format_behavior_records,
-    format_goals,
+)
+from services.assessment_instruments import (
+    INSTRUMENT_TYPE_LABELS,
+    format_answer,
+    instrument_field_label,
+    latest_instruments_by_type,
+    missing_required_instruments,
 )
 
 
@@ -92,9 +96,17 @@ async def generate_ai_case_study(
             detail="Limite mensal de relatórios IA atingido"
         )
 
+    context = await get_case_study_context(db, student.id)
+    missing_instruments = missing_required_instruments(context["assessments"])
+    if missing_instruments:
+        missing_labels = ", ".join(INSTRUMENT_TYPE_LABELS[item] for item in missing_instruments)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Preencha os três instrumentais antes de gerar o estudo de caso. Faltam: {missing_labels}.",
+        )
+
     if settings.pilot_demo_mode:
-        context = await get_case_study_context(db, student.id)
-        report_content = build_pilot_demo_report(student.name, context)
+        report_content = build_pilot_demo_report(student, context)
         pdf_path = generate_case_study_pdf(
             student_name=student.name,
             report_content=report_content,
@@ -145,42 +157,52 @@ async def generate_ai_case_study(
     }
 
 
-def build_pilot_demo_report(student_name: str, context: dict) -> str:
-    assessments = context["assessments"]
-    behavior_records = context["behavior_records"]
-    goals = context["goals"]
-    appointments = context["appointments"]
-    analytics = context["analytics"]
+def build_pilot_demo_report(student, context: dict) -> str:
+    instruments = latest_instruments_by_type(context["assessments"])
 
-    return f"""Estudo de caso demonstrativo — {student_name}
+    def evidence(instrument_type: str, fields: list[str]) -> str:
+        assessment = instruments[instrument_type]
+        data = assessment.assessment_data or {}
+        lines = [
+            f"- {instrument_field_label(field)}: {format_answer(data[field])}"
+            for field in fields
+            if field in data and data[field] not in (None, "", [])
+        ]
+        return "\n".join(lines) if lines else "Não informado nos instrumentais."
 
-Aviso de validação
+    return f"""Estudo de caso demonstrativo — {student.name}
 
-Este conteúdo foi produzido pelo modo demonstrativo local do piloto, sem envio de dados a uma inteligência artificial externa. Ele consolida os dados reais registrados para este aluno pelos profissionais vinculados e permite validar revisão, histórico e exportação em PDF.
+Este documento foi consolidado localmente, sem envio de dados para IA externa. Ele apresenta as evidências no padrão solicitado; a síntese analítica final deve ser revisada e complementada pela profissional do AEE.
 
-1. Fontes consolidadas
+5.4.1 Identificação do estudante
+Nome: {student.name}
+Idade: {student.age if student.age is not None else "Não informado nos instrumentais"}
+Escola: {student.school_name or "Não informado nos instrumentais"}
+{evidence("student_assessment", ["grade_year", "class_and_shift", "school_network", "special_education_target", "school_entry_date", "has_health_diagnosis", "health_diagnosis_details"])}
 
-Registros de acompanhamento: {analytics["records_count"]}
-Avaliações e entrevistas: {len(assessments)}
-Metas e itens de PEI: {len(goals)}
-Atendimentos: {len(appointments)}
+5.4.2 Histórico escolar e trajetória educacional
+{evidence("parent_interview", ["school_start_age", "school_difficulties", "has_repetition_or_dropout", "repetition_or_dropout_details", "difficult_subjects", "school_engagement"])}
 
-2. Registros recentes da equipe
+5.4.3 Observação pedagógica na sala comum
+{evidence("student_assessment", ["oral_explanation_comprehension", "required_mediation", "task_initiation_and_completion", "individual_and_group_participation", "response_when_requested", "attention_duration", "peer_interaction", "adult_reference", "isolation_or_conflicts", "functional_communication", "command_comprehension", "materials_and_routines", "constant_task_support"])}
+{evidence("school_interview", ["identified_learning_and_style", "class_and_teacher_interaction", "school_activity_participation"])}
 
-{format_behavior_records(behavior_records[:10])}
+5.4.4 Avaliação da funcionalidade no contexto escolar
+{evidence("student_assessment", ["school_feeding_autonomy", "school_hygiene_autonomy", "school_mobility", "physical_safety", "emotional_behavioral_regulation", "school_sensory_tolerance"])}
+{evidence("parent_interview", ["independent_activities", "feeding_autonomy", "hygiene_autonomy", "mobility_autonomy", "safety_and_self_regulation", "sensory_tolerance"])}
 
-3. Avaliações e entrevistas
+5.4.5 Identificação das barreiras
+{evidence("school_interview", ["pedagogical_barriers", "communication_barriers", "attitudinal_barriers", "physical_and_sensory_barriers"])}
 
-{format_assessments(assessments[:10])}
+5.4.6 Potencialidades e interesses do estudante
+{evidence("student_assessment", ["student_interests", "preserved_skills", "engagement_factors", "effective_mediation", "perception_strengths", "attention_strengths", "memory_strengths", "language_strengths", "logical_reasoning_strengths"])}
 
-4. PEI e metas
+5.4.7 Estratégias já utilizadas e seus resultados
+{evidence("school_interview", ["strategies_already_used", "successful_strategies", "unsuccessful_strategies", "inclusive_methodology"])}
+{evidence("student_assessment", ["resources_already_used", "resources_needed", "curricular_accessibility_implications"])}
 
-{format_goals(goals[:20])}
+5.4.8 Parecer pedagógico conclusivo
+No modo demonstrativo local, não é produzida uma conclusão por IA. A profissional do AEE deve revisar as evidências acima, explicitar barreiras e necessidades educacionais específicas, fundamentar a indicação de AEE e de eventuais serviços de apoio e registrar recomendações pedagógicas iniciais. Este parecer subsidiará a elaboração do PAEE; o PEI da sala regular deverá ser elaborado posteriormente pelo professor da sala comum com base no PAEE.
 
-5. Atendimentos multiprofissionais
-
-{format_appointments(appointments[:20])}
-
-6. Próximos passos
-
-Revise a consolidação, registre as interpretações profissionais necessárias, salve uma nova versão e baixe o PDF. A análise textual com IA externa permanece desativada neste piloto gratuito e só deve ser ativada com autorização, orçamento e revisão de privacidade."""
+Instrumentais consolidados
+{format_assessments(context["assessments"])}"""

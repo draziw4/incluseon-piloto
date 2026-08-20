@@ -1,5 +1,6 @@
-import { Activity, Clock, MapPin, Pencil, Trash2 } from "lucide-react"
+import { Activity, Clock, MapPin, Pencil, Trash2, UserRound } from "lucide-react"
 
+import { roleLabels } from "@/features/auth/access"
 import type { BehaviorRecord } from "../types/behavior-record"
 
 type Props = {
@@ -9,6 +10,9 @@ type Props = {
 }
 
 export function BehaviorRecordCard({ record, onEdit, onDelete }: Props) {
+  const authorName = record.created_by?.name ?? record.created_by_name
+  const authorRole = record.created_by?.role ?? record.created_by_role
+
   return (
     <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -17,8 +21,13 @@ export function BehaviorRecordCard({ record, onEdit, onDelete }: Props) {
             <Activity size={18} />
 
             <span className="text-sm font-semibold">
-              Registro ABA
+              Observação comportamental
             </span>
+          </div>
+
+          <div className="mb-2 flex items-center gap-2 text-sm text-zinc-600">
+            <UserRound size={16} className="text-blue-500" />
+            {authorName ? <span>Registrado por <strong className="text-blue-950">{authorName}</strong>{authorRole ? ` · ${roleLabels[authorRole] ?? authorRole}` : ""}</span> : <span className="font-medium text-zinc-500">Autor não identificado</span>}
           </div>
 
           <h3 className="text-lg font-bold text-blue-950">

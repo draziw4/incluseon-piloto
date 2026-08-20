@@ -58,7 +58,7 @@ export const toolLabels: Record<ToolAccess, string> = {
   assessments: "Avaliações",
   interviews: "Entrevistas",
   timeline: "Timeline clínica integrada",
-  goals: "PEI e metas",
+  goals: "PAEE e metas",
   ai_case_studies: "Estudos de caso com IA",
   reports: "Relatórios",
   analytics: "Análises",

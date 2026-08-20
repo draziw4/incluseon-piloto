@@ -102,7 +102,7 @@ export function StudentsPage() {
           </h2>
 
           <p className="mt-1 max-w-md text-sm text-zinc-500">
-            Cadastre o primeiro aluno para iniciar avaliações, registros ABA,
+            Cadastre o primeiro aluno para iniciar avaliações, relatórios,
             entrevistas e geração de estudos de caso com IA.
           </p>
 

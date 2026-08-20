@@ -80,7 +80,7 @@ export function StudentSidebar() {
 
         <Activity size={20} />
 
-        ABA Timeline
+        Histórico de acompanhamento
 
       </button>
 

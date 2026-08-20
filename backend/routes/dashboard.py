@@ -195,7 +195,7 @@ async def get_student_without_recent_behavior_reminders(db, visible_ids_select, 
         DashboardReminder(
             type="behavior",
             title="Registrar evolução comportamental",
-            description=f"{student.name} não possui registro ABA nos últimos 7 dias.",
+            description=f"{student.name} não possui observação comportamental nos últimos 7 dias.",
             to=f"/students/{student.id}?tab=behavior",
             priority="medium"
         )

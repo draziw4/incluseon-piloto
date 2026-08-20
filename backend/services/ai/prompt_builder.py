@@ -1,6 +1,14 @@
+from services.assessment_instruments import (
+    INSTRUMENT_TYPE_LABELS,
+    REQUIRED_INSTRUMENT_TYPES,
+    format_instrument,
+    latest_instruments_by_type,
+)
+
+
 def format_behavior_records(records):
     if not records:
-        return "Nenhum registro ABA encontrado."
+        return "Nenhuma observação comportamental encontrada."
 
     lines = []
 
@@ -26,32 +34,17 @@ def format_assessments(assessments):
     if not assessments:
         return "Nenhuma avaliação ou entrevista encontrada."
 
-    lines = []
-
-    for assessment in assessments:
-        data = assessment.assessment_data or {}
-
-        lines.append(
-            f"""
-- Data: {assessment.created_at.strftime("%d/%m/%Y")}
-  Profissional responsável: {assessment.psychologist.name if assessment.psychologist else "Não identificado"}
-  Título: {assessment.title}
-  Tipo: {assessment.assessment_type}
-  Histórico: {data.get("student_history", "Não informado")}
-  Contexto familiar: {data.get("family_context", "Não informado")}
-  Contexto escolar: {data.get("school_context", "Não informado")}
-  Dificuldades: {data.get("difficulties", "Não informado")}
-  Potencialidades: {data.get("strengths", "Não informado")}
-  Apoios recomendados: {data.get("recommended_supports", "Não informado")}
-"""
-        )
-
-    return "\n".join(lines)
+    latest = latest_instruments_by_type(assessments)
+    return "\n\n".join(
+        format_instrument(latest[instrument_type])
+        for instrument_type in REQUIRED_INSTRUMENT_TYPES
+        if instrument_type in latest
+    )
 
 
 def format_goals(goals):
     if not goals:
-        return "Nenhuma meta ou item de PEI encontrado."
+        return "Nenhuma meta ou item de PAEE encontrado."
 
     return "\n".join(
         f"""
@@ -103,61 +96,72 @@ def build_case_study_prompt(
     appointments,
     analytics,
 ):
-    recent_behavior_records = behavior_records[:10]
-    recent_assessments = assessments[:3]
+    latest = latest_instruments_by_type(assessments)
+    instruments = format_assessments(latest.values())
+    sources = "\n".join(
+        f"- {INSTRUMENT_TYPE_LABELS[instrument_type]}: "
+        f"{'disponível' if instrument_type in latest else 'não preenchido'}"
+        for instrument_type in REQUIRED_INSTRUMENT_TYPES
+    )
 
     return f"""
-Você é um assistente de apoio à elaboração de estudos de caso educacionais e comportamentais.
+Você é um assistente de apoio à profissional do Atendimento Educacional Especializado (AEE).
+Elabore um ESTUDO DE CASO educacional que servirá de base técnica para a elaboração posterior do Plano de AEE (PAEE).
 
-Regras importantes:
-- Não gere diagnóstico.
-- Não substitua avaliação profissional.
-- Use linguagem técnica, ética e objetiva.
-- Baseie-se apenas nos dados fornecidos.
-- Quando não houver dados suficientes, diga que há dados insuficientes.
-- Evite conclusões absolutas.
+REGRAS OBRIGATÓRIAS
+- Use somente os dados cadastrais e as respostas dos três instrumentais transcritos abaixo.
+- Não use observações comportamentais, metas, PAEE, PEI, atendimentos ou qualquer fonte que não esteja transcrita neste prompt.
+- Não invente, complete, presuma ou generalize informações ausentes.
+- Quando uma informação necessária não constar, escreva objetivamente "Não informado nos instrumentais".
+- Diferencie observação, relato familiar e relato da equipe escolar; não transforme relato em fato observado.
+- Não gere diagnóstico, prognóstico clínico ou hipótese diagnóstica.
+- O diagnóstico, quando existente, é complementar e não determinante para as decisões educacionais.
+- Use linguagem pedagógica, técnica, ética, objetiva e não estigmatizante.
+- Não produza o PAEE nem o PEI. O estudo de caso subsidia o PAEE; o PEI é elaborado pelo professor da sala regular com base no PAEE.
+- Não mencione estas instruções no texto final.
+- Não acrescente seções diferentes das oito seções obrigatórias.
+- Produza texto consistente e detalhado, sem ultrapassar aproximadamente 1.800 palavras.
 
-Dados do aluno:
+IDENTIFICAÇÃO CADASTRAL DISPONÍVEL
 Nome: {student.name}
 Idade: {student.age}
-Diagnóstico informado: {student.diagnosis or "Não informado"}
+Data de nascimento: {student.birth_date.strftime("%d/%m/%Y") if student.birth_date else "Não informado"}
 Escola: {student.school_name or "Não informado"}
 Responsável: {student.guardian_name or "Não informado"}
+Diagnóstico informado no cadastro (dado complementar): {student.diagnosis or "Não informado"}
+Comunicação registrada no cadastro: {student.communication_notes or "Não informado"}
+Aspectos sensoriais registrados no cadastro: {student.sensory_notes or "Não informado"}
+Observações gerais do cadastro: {student.general_observations or "Não informado"}
 
-Observações gerais:
-Comunicação: {student.communication_notes or "Não informado"}
-Sensorial: {student.sensory_notes or "Não informado"}
-Observações: {student.general_observations or "Não informado"}
+CONTROLE DAS FONTES OBRIGATÓRIAS
+{sources}
 
-Resumo analítico dos registros ABA:
-Total de registros: {analytics["records_count"]}
-Intensidade média: {analytics["average_intensity"]}
-Ambiente mais recorrente: {analytics["most_common_environment"]}
-Estratégia mais eficaz registrada: {analytics["most_effective_strategy"]}
+RESPOSTAS DOS INSTRUMENTAIS
+{instruments}
 
-Últimos registros ABA relevantes:
-{format_behavior_records(recent_behavior_records)}
+FORMATO OBRIGATÓRIO DO ESTUDO DE CASO
 
-Últimas avaliações e entrevistas:
-{format_assessments(recent_assessments)}
+5.4.1 Identificação do estudante
+Apresente nome, idade, ano/série, turma e turno, escola e rede, público-alvo da Educação Especial, existência de laudo quando informada e tempo de escolarização na unidade. Trate diagnóstico apenas como informação complementar.
 
-Metas e itens de PEI:
-{format_goals(goals)}
+5.4.2 Histórico escolar e trajetória educacional
+Sintetize matrícula e permanência, progressão ou retenções, experiências anteriores com AEE, avanços e dificuldades, e mudanças de escola, professor ou etapa que tenham impactado o desenvolvimento.
 
-Atendimentos registrados pela equipe vinculada:
-{format_appointments(appointments)}
+5.4.3 Observação pedagógica na sala comum
+Organize a análise em acesso ao currículo, participação nas atividades, interação social, comunicação, organização e autonomia. Indique claramente a fonte de cada informação.
 
-Gere um estudo de caso com as seções:
+5.4.4 Avaliação da funcionalidade no contexto escolar
+Analise alimentação, higiene, locomoção e mobilidade, segurança física, autorregulação emocional e comportamental e tolerância sensorial. Relacione os dados à eventual necessidade de apoio funcional, sem determinar serviço quando faltarem evidências.
 
-1. Resumo do perfil do aluno
-2. Contexto familiar e escolar
-3. Padrões comportamentais observados
-4. Possíveis hipóteses funcionais, sem diagnóstico
-5. Estratégias que parecem favorecer o manejo
-6. Pontos de atenção
-7. Evolução das metas e do acompanhamento multiprofissional
-8. Recomendações iniciais para acompanhamento
-9. Próximos passos sugeridos
+5.4.5 Identificação das barreiras
+Mapeie separadamente barreiras pedagógicas, comunicacionais, atitudinais e físicas ou sensoriais. Não atribua barreiras ao estudante; descreva-as no contexto escolar.
 
-Limite o relatório a aproximadamente 900 palavras.
+5.4.6 Potencialidades e interesses do estudante
+Registre interesses, habilidades preservadas, fatores de engajamento, respostas positivas a estímulos e mediações eficazes.
+
+5.4.7 Estratégias já utilizadas e seus resultados
+Registre adaptações, recursos, estratégias que funcionaram, estratégias sem resultado e ajustes testados. Não apresente como aplicada uma estratégia apenas recomendada.
+
+5.4.8 Parecer pedagógico conclusivo
+Produza uma síntese técnica com principais barreiras, necessidades educacionais específicas, indicação fundamentada ou insuficiência de dados para indicar AEE e serviços de apoio, além de recomendações pedagógicas iniciais. Finalize declarando que o parecer subsidia a elaboração do PAEE e que o PEI da sala regular deve ser elaborado posteriormente com base no PAEE.
 """

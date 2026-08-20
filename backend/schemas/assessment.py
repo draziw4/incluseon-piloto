@@ -53,9 +53,7 @@ class AssessmentResponse(
     id: int
 
     student_id: int
-    psychologist_id: int
+    psychologist_id: int | None
 
     created_at: datetime
     updated_at: datetime
-
-    

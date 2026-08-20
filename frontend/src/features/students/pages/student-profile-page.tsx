@@ -16,7 +16,7 @@ import { useStudent } from "../hooks/use-student";
 import { StudentHeader } from "../components/student-header";
 import { StudentOverview } from "../components/student-overview";
 import { AssessmentsPanel } from "../assessments/components/assessments-panel";
-import { BehaviorRecordsPanel } from "../behavior/components/behavior-records-panel";
+import { StudentReportsPanel } from "../progress-reports/components/student-reports-panel";
 import { StudentTimelinePanel } from "../timeline/components/student-timeline-panel";
 import { StudentAnalyticsPanel } from "../analytics/components/student-analytics-panel";
 import { AIReportsPanel } from "../reports/components/ai-reports-panel";
@@ -87,6 +87,7 @@ export function StudentProfilePage() {
   const canManage = hasTool(user, "student_management") && (user?.role === "admin" || student.psychologist_id === user?.id);
   const currentUserLink = professionals?.find((professional) => professional.user_id === user?.id);
   const canManageBehavior = hasTool(user, "behavior_entry") && (canManage || Boolean(currentUserLink?.can_register_aba));
+  const canManageProgressReports = user?.role === "admin" || user?.role === "aee";
   const canManageGoals = hasTool(user, "goals") && (canManage || Boolean(currentUserLink?.can_create_pei));
   const canManageTeam = hasTool(user, "team_management") && canManage;
 
@@ -112,7 +113,7 @@ export function StudentProfilePage() {
             {hasTool(user, "behavior_records") ? <StudentProfileNavButton
               active={activeTab === "behavior"}
               icon={<Activity size={18} />}
-              label="Registros ABA"
+              label="Relatórios"
               onClick={() => selectTab("behavior")}
             /> : null}
 
@@ -139,13 +140,13 @@ export function StudentProfilePage() {
             {hasTool(user, "goals") ? <StudentProfileNavButton
               active={activeTab === "goals"}
               icon={<Target size={18} />}
-              label="PEI e Metas"
+              label="PAEE e Metas"
               onClick={() => selectTab("goals")}
             /> : null}
             {hasTool(user, "reports") ? <StudentProfileNavButton
               active={activeTab === "reports"}
               icon={<FileText size={18} />}
-              label="Relatórios IA"
+              label="Estudos de caso"
               onClick={() => selectTab("reports")}
             /> : null}
             <StudentProfileNavButton
@@ -161,7 +162,11 @@ export function StudentProfilePage() {
           {activeTab === "overview" && <StudentOverview student={student} />}
 
           {activeTab === "behavior" && (
-            <BehaviorRecordsPanel studentId={student.id.toString()} canManage={canManageBehavior} />
+            <StudentReportsPanel
+              studentId={student.id.toString()}
+              canManageBehavior={canManageBehavior}
+              canManageProgressReports={canManageProgressReports}
+            />
           )}
 
           {activeTab === "assessments" && (

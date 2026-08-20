@@ -5,6 +5,14 @@ from enum import Enum
 from pydantic import BaseModel,ConfigDict
 
 
+class BehaviorRecordAuthor(BaseModel):
+    id: int
+    name: str
+    role: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # =====================================
 # BASE
 # =====================================
@@ -93,6 +101,9 @@ class BehaviorRecordResponse(
     id: int
     student_id: int
     created_by_id: int | None = None
+    created_by: BehaviorRecordAuthor | None = None
+    created_by_name: str | None = None
+    created_by_role: str | None = None
     created_at: datetime
 
 

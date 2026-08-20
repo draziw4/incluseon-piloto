@@ -150,6 +150,30 @@ class RoleAccessResponse(BaseModel):
     allowed_tools: list[str]
 
 
+class UserDeletionStudent(BaseModel):
+    id: int
+    name: str
+
+
+class UserDeletionReplacement(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: UserRole
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserDeletionImpact(BaseModel):
+    user_id: int
+    user_name: str
+    owned_students: list[UserDeletionStudent] = Field(default_factory=list)
+    linked_students_count: int = 0
+    historical_records_count: int = 0
+    future_appointments_count: int = 0
+    replacement_candidates: list[UserDeletionReplacement] = Field(default_factory=list)
+
+
 
 
 class UserSearchResponse(BaseModel):

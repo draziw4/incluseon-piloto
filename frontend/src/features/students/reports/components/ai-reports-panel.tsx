@@ -24,6 +24,11 @@ import { downloadAIReport } from "../api/download-ai-report"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useStudentProfessionals } from "../../team/hooks/use-student-professionals"
 import { useStudent } from "../../hooks/use-student"
+import { useAssessments } from "../../assessments/hooks/use-assessments"
+import {
+  instrumentDefinitions,
+  instrumentTypes,
+} from "../../assessments/instrument-definitions"
 
 type Props = {
   studentId: string
@@ -37,6 +42,11 @@ export function AIReportsPanel({ studentId }: Props) {
   const { user } = useAuth()
   const { data: student } = useStudent(studentId)
   const { data: professionals } = useStudentProfessionals(studentId)
+  const { data: assessmentsData, isLoading: isLoadingAssessments } = useAssessments(studentId)
+  const assessments = Array.isArray(assessmentsData) ? assessmentsData : assessmentsData?.items ?? []
+  const completedInstrumentTypes = new Set(assessments.map((assessment) => assessment.assessment_type))
+  const missingInstrumentTypes = instrumentTypes.filter((type) => !completedInstrumentTypes.has(type))
+  const hasAllInstruments = missingInstrumentTypes.length === 0
 
   const queryClient = useQueryClient()
 
@@ -152,12 +162,11 @@ export function AIReportsPanel({ studentId }: Props) {
             </div>
 
             <h2 className="text-xl font-bold text-blue-950">
-              Relatórios IA
+              Estudo de caso com IA
             </h2>
 
             <p className="mt-1 text-sm text-zinc-500">
-              Gere um estudo de caso com base nos dados do aluno, registros ABA,
-              entrevistas, avaliações e timeline.
+              Consolide os três instrumentais no padrão 5.4.1 a 5.4.8. O documento gerado subsidia a elaboração posterior do PAEE.
             </p>
           </div>
 
@@ -167,11 +176,15 @@ export function AIReportsPanel({ studentId }: Props) {
             disabled={
               generateMutation.isPending ||
               isProcessing ||
-              hasReachedLimit
+              hasReachedLimit ||
+              isLoadingAssessments ||
+              !hasAllInstruments
             }
             className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {hasReachedLimit ? (
+            {!hasAllInstruments ? (
+              "Preencha os instrumentais"
+            ) : hasReachedLimit ? (
               "Limite mensal atingido"
             ) : generateMutation.isPending || isProcessing ? (
               <>
@@ -189,6 +202,31 @@ export function AIReportsPanel({ studentId }: Props) {
             )}
           </button>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+        <h3 className="font-bold text-blue-950">Fontes obrigatórias do estudo de caso</h3>
+        <p className="mt-1 text-sm text-zinc-500">
+          A versão mais recente de cada instrumental será usada. Observações comportamentais, metas, PAEE e PEI não entram como fonte deste estudo de caso.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          {instrumentTypes.map((type) => {
+            const completed = completedInstrumentTypes.has(type)
+            return (
+              <div key={type} className={`rounded-xl border p-4 ${completed ? "border-emerald-100 bg-emerald-50" : "border-amber-100 bg-amber-50"}`}>
+                <p className={`text-xs font-bold uppercase tracking-wide ${completed ? "text-emerald-700" : "text-amber-700"}`}>
+                  {completed ? "Preenchido" : "Pendente"}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-blue-950">{instrumentDefinitions[type].label}</p>
+              </div>
+            )
+          })}
+        </div>
+        {!hasAllInstruments && !isLoadingAssessments && (
+          <p className="mt-4 text-sm text-amber-800">
+            Complete os três instrumentais na aba Entrevistas e Avaliações para liberar a geração.
+          </p>
+        )}
       </section>
 
       {actionError && (
@@ -293,7 +331,7 @@ export function AIReportsPanel({ studentId }: Props) {
             </p>
           </div>
 
-          <div className="`max-h-[600px]` overflow-y-auto rounded-2xl bg-slate-50 p-5">
+          <div className="max-h-[600px] overflow-y-auto rounded-2xl bg-slate-50 p-5">
             <pre className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
               {taskStatus.report}
             </pre>

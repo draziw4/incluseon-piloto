@@ -337,7 +337,7 @@ A família participa do acompanhamento e relata dificuldades principalmente em m
 
 3. Padrões comportamentais observados
 
-Os registros ABA indicam que os comportamentos de maior intensidade ocorrem principalmente em situações de mudança inesperada, barulho intenso e tarefas longas. Os ambientes mais desafiadores incluem sala de aula em momentos de transição e pátio durante o intervalo.
+As observações comportamentais indicam que os comportamentos de maior intensidade ocorrem principalmente em situações de mudança inesperada, barulho intenso e tarefas longas. Os ambientes mais desafiadores incluem sala de aula em momentos de transição e pátio durante o intervalo.
 
 4. Hipóteses funcionais
 
@@ -349,7 +349,7 @@ Recomenda-se o uso de rotina visual, antecipação de mudanças, pausas sensoria
 
 6. Próximos passos
 
-A equipe pode continuar registrando ocorrências ABA, acompanhar a evolução dos indicadores, ampliar entrevistas com família e escola e construir um PEI com metas pedagógicas individualizadas.
+A equipe pode continuar registrando observações comportamentais, acompanhar a evolução dos indicadores, ampliar entrevistas com família e escola e construir um PEI com metas pedagógicas individualizadas.
 """
 
     report = AIReport(

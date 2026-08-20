@@ -52,7 +52,7 @@ export function EnvironmentChart({ records }: Props) {
         </h3>
 
         <p className="text-sm text-zinc-500">
-          Locais onde os registros ABA mais ocorreram.
+          Locais onde as observações comportamentais mais ocorreram.
         </p>
       </div>
 

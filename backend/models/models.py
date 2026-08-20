@@ -188,7 +188,7 @@ class User(Base):
     cascade="all, delete-orphan"
 )
 
-    students: Mapped[list["Student"]] = relationship(back_populates="psychologist",cascade="all, delete-orphan")
+    students: Mapped[list["Student"]] = relationship(back_populates="psychologist")
 
     role: Mapped[UserRole] = mapped_column(
     SQLEnum(
@@ -201,8 +201,7 @@ class User(Base):
 )
 
     appointments: Mapped[list["Appointment"]] = relationship(
-    back_populates="professional",
-    cascade="all, delete-orphan"
+    back_populates="professional"
 )
 
 
@@ -227,8 +226,8 @@ class PilotFeedback(Base):
     __tablename__ = "pilot_feedback"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    created_by_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False, index=True
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     page_path: Mapped[str] = mapped_column(String(500), nullable=False)
     category: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
@@ -244,7 +243,7 @@ class PilotFeedback(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    created_by: Mapped["User"] = relationship()
+    created_by: Mapped["User | None"] = relationship()
     
 
 
@@ -323,6 +322,10 @@ class Student(Base):
     back_populates="student",
     cascade="all, delete-orphan"
 )
+    progress_reports: Mapped[list["StudentProgressReport"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
     professionals: Mapped[list["StudentProfessional"]] = relationship(
     back_populates="student",
     cascade="all, delete-orphan"
@@ -395,8 +398,18 @@ class BehaviorRecord(Base):
 
     created_by: Mapped["User | None"] = relationship()
 
+    created_by_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    created_by_role: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
     # =====================================
-    # ABA RECORD
+    # BEHAVIOR OBSERVATION RECORD
     # =====================================
 
     antecedent: Mapped[str] = mapped_column(
@@ -481,6 +494,47 @@ class BehaviorRecord(Base):
     )
 
 
+class StudentProgressReport(Base):
+    __tablename__ = "student_progress_reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    report_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    period_start: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    period_end: Mapped[date] = mapped_column(Date, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    activities: Mapped[str | None] = mapped_column(Text, nullable=True)
+    participation_engagement: Mapped[str | None] = mapped_column(Text, nullable=True)
+    progress: Mapped[str | None] = mapped_column(Text, nullable=True)
+    difficulties: Mapped[str | None] = mapped_column(Text, nullable=True)
+    strategies_and_resources: Mapped[str | None] = mapped_column(Text, nullable=True)
+    communication_socialization: Mapped[str | None] = mapped_column(Text, nullable=True)
+    autonomy_functionality: Mapped[str | None] = mapped_column(Text, nullable=True)
+    family_school_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    next_steps: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_by_role: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    student: Mapped["Student"] = relationship(back_populates="progress_reports")
+    created_by: Mapped["User | None"] = relationship()
+
+
 class StudentGoal(Base):
     __tablename__ = "student_goals"
 
@@ -490,9 +544,9 @@ class StudentGoal(Base):
         nullable=False,
         index=True
     )
-    created_by_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
         index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -527,7 +581,7 @@ class StudentGoal(Base):
     )
 
     student: Mapped["Student"] = relationship(back_populates="goals")
-    created_by: Mapped["User"] = relationship()
+    created_by: Mapped["User | None"] = relationship()
 
 
 
@@ -552,13 +606,14 @@ class Assessment(Base):
         ForeignKey("students.id")
     )
 
-    psychologist_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id")
+    psychologist_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     student: Mapped["Student"] = relationship()
 
-    psychologist: Mapped["User"] = relationship()
+    psychologist: Mapped["User | None"] = relationship()
 
     # =====================================
     # BASIC INFO
@@ -619,9 +674,9 @@ class AIReport(Base):
         back_populates="ai_reports"
     )
 
-    created_by_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False
+    created_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
     )
 
     report_type: Mapped[str] = mapped_column(
@@ -666,7 +721,7 @@ class AIReport(Base):
     )
 
     last_edited_by_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
@@ -696,9 +751,9 @@ class AIReportRevision(Base):
         nullable=False,
         index=True
     )
-    edited_by_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False
+    edited_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
     )
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -724,9 +779,9 @@ class Appointment(Base):
         index=True
     )
 
-    professional_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"),
-        nullable=False,
+    professional_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
         index=True
     )
 
@@ -787,6 +842,6 @@ class Appointment(Base):
         back_populates="appointments"
     )
 
-    professional: Mapped["User"] = relationship(
+    professional: Mapped["User | None"] = relationship(
         back_populates="appointments"
     )

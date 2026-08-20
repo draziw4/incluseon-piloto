@@ -136,7 +136,7 @@ export function LoginPage() {
               </h2>
 
               <p className="mt-6 text-lg leading-relaxed text-blue-100">
-                Registre avaliações, entrevistas, ocorrências ABA, evolução
+                Registre avaliações, entrevistas, observações comportamentais, evolução
                 comportamental e gere estudos de caso com apoio de IA.
               </p>
             </div>
@@ -144,8 +144,8 @@ export function LoginPage() {
 
           <div className="grid grid-cols-3 gap-4">
             <FeatureCard
-              title="ABA"
-              description="Registros ABC e manejo comportamental"
+              title="Acompanhamento"
+              description="Observações ABC e manejo comportamental"
             />
 
             <FeatureCard
@@ -154,7 +154,7 @@ export function LoginPage() {
             />
 
             <FeatureCard
-              title="PEI"
+              title="PAEE"
               description="Base para acompanhamento pedagógico"
             />
           </div>

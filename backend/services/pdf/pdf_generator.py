@@ -1,6 +1,7 @@
 from pathlib import Path
 from html import escape
 from io import BytesIO
+import re
 
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -104,6 +105,16 @@ def _build_case_study_pdf(destination, student_name: str, report_content: str) -
         leading=16,
         spaceAfter=8
     )
+    section_style = ParagraphStyle(
+        "ReportSection",
+        parent=styles["Heading2"],
+        textColor=colors.HexColor("#1d4ed8"),
+        fontSize=13,
+        leading=17,
+        spaceBefore=10,
+        spaceAfter=6,
+        keepWithNext=True,
+    )
 
     title = Paragraph(
         f"Estudo de Caso<br/><font size='12'>Aluno: {escape(student_name)}</font>",
@@ -123,8 +134,10 @@ def _build_case_study_pdf(destination, student_name: str, report_content: str) -
     paragraphs = report_content.split("\n\n")
 
     for paragraph in paragraphs:
-        safe_content = escape(paragraph).replace("\n", "<br/>")
-        elements.append(Paragraph(safe_content or " ", body_style))
+        normalized = paragraph.strip().lstrip("#").strip()
+        safe_content = escape(normalized).replace("\n", "<br/>")
+        style = section_style if re.match(r"^5\.4\.[1-8]\b", normalized) else body_style
+        elements.append(Paragraph(safe_content or " ", style))
 
     # =====================================
     # BUILD PDF

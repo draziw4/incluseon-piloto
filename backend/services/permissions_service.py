@@ -13,12 +13,27 @@ from models.models import (
 
 PERMISSION_MESSAGES = {
     "can_view": "Você não tem permissão para acessar este aluno.",
-    "can_register_aba": "Você não tem permissão para registrar ABA neste aluno.",
+    "can_register_aba": "Você não tem permissão para registrar observações comportamentais neste aluno.",
     "can_create_assessment": "Você não tem permissão para criar avaliações ou entrevistas neste aluno.",
-    "can_create_pei": "Você não tem permissão para criar ou editar PEI neste aluno.",
+    "can_create_pei": "Você não tem permissão para criar ou editar o PAEE deste aluno.",
     "can_generate_ai_report": "Você não tem permissão para gerar relatório IA para este aluno.",
     "can_view_reports": "Você não tem permissão para visualizar relatórios deste aluno.",
 }
+
+
+def require_behavior_record_ownership(
+    user: User,
+    created_by_id: int | None,
+) -> None:
+    """Prevent support professionals from changing another author's record."""
+    if (
+        user.role == UserRole.SUPPORT_PROFESSIONAL
+        and created_by_id != user.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O profissional de apoio só pode editar ou excluir registros criados por ele.",
+        )
 
 async def get_student_or_404(
     db: AsyncSession,

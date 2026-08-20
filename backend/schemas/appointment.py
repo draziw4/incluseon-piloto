@@ -92,7 +92,7 @@ class AppointmentResponse(BaseModel):
     id: int
 
     student_id: int
-    professional_id: int
+    professional_id: int | None
 
     appointment_type: AppointmentType
     status: AppointmentStatus

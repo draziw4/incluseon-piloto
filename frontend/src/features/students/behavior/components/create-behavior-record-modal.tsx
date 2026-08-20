@@ -79,7 +79,7 @@ export function CreateBehaviorRecordModal({ studentId, open, onClose, record }: 
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
-              {record ? "Editar registro ABA" : "Novo registro ABA"}
+              {record ? "Editar observação comportamental" : "Nova observação comportamental"}
             </h2>
 
             <p className="text-sm text-zinc-500">

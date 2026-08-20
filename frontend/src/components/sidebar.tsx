@@ -1,4 +1,4 @@
-import { Settings, LogOut, Sparkles } from "lucide-react"
+import { Settings, LogOut, PanelLeftClose, Sparkles } from "lucide-react"
 
 import { NavLink } from "react-router-dom"
 
@@ -6,17 +6,24 @@ import { useAuth } from "../features/auth/hooks/use-auth"
 import { hasTool, roleLabels } from "../features/auth/access"
 import { navigationItems } from "../routes/navigation"
 
-export function Sidebar() {
+type SidebarProps = {
+  open: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   const { user, logout } = useAuth()
 
+  if (!open) return null
+
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-blue-100 bg-white">
+    <aside className="fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r border-blue-100 bg-white shadow-xl md:sticky md:top-0 md:shadow-none">
       <div className="flex h-16 items-center gap-3 border-b border-blue-100 px-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
           <Sparkles size={18} />
         </div>
 
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-blue-950">
             IncluseON
           </h1>
@@ -24,6 +31,16 @@ export function Sidebar() {
             Acompanhamento AEE
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Ocultar menu lateral"
+          title="Ocultar menu"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-500 hover:bg-blue-50 hover:text-blue-700"
+        >
+          <PanelLeftClose size={19} />
+        </button>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
