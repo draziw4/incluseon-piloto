@@ -33,6 +33,7 @@ from models.models import (
     User,
     UserRole,
 )
+from services.notification_service import create_notification
 from permissions import require_role, require_tool
 from schemas.user import (
     AdminUserReview,
@@ -192,6 +193,21 @@ async def review_user(
     user.reviewed_at = datetime.utcnow()
     user.token_version += 1
     await normalize_user_student_links(db, user)
+    await create_notification(
+        db,
+        recipient_user_id=user.id,
+        actor_user_id=admin.id,
+        event_type="professional_account_reviewed",
+        title="Análise do cadastro profissional concluída",
+        message={
+            AccountStatus.ACTIVE: "Seu cadastro foi autorizado e o acesso profissional está ativo.",
+            AccountStatus.REJECTED: "Seu cadastro não foi autorizado. Consulte a orientação administrativa registrada.",
+            AccountStatus.SUSPENDED: "Seu acesso profissional foi suspenso. Consulte a orientação administrativa registrada.",
+        }[data.status],
+        resource_type="user",
+        resource_id=user.id,
+        action_url="/settings",
+    )
     await db.commit()
     await db.refresh(user)
     return user

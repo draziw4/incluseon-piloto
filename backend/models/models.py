@@ -222,6 +222,31 @@ class PasswordResetToken(Base):
     user: Mapped["User"] = relationship()
 
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipient_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    student_id: Mapped[int | None] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    resource_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    resource_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    action_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False, index=True
+    )
+
+    recipient: Mapped["User"] = relationship(foreign_keys=[recipient_user_id])
+    student: Mapped["Student | None"] = relationship(foreign_keys=[student_id])
+
+
 class PilotFeedback(Base):
     __tablename__ = "pilot_feedback"
 

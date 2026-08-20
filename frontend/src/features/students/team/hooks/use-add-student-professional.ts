@@ -26,6 +26,10 @@ export function useAddStudentProfessional(
       queryClient.invalidateQueries({
         queryKey: ["students"]
       })
+
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"]
+      })
     }
   })
 }

@@ -25,6 +25,7 @@ export function useStudentProgressReportMutations(studentId: string) {
     queryClient.invalidateQueries({ queryKey: ["student-timeline", studentId] }),
     queryClient.invalidateQueries({ queryKey: ["student-behavior-analytics", studentId] }),
     queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] }),
+    queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   ])
 
   const createMutation = useMutation({

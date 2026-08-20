@@ -18,6 +18,7 @@ from schemas.student_progress_report import (
     StudentProgressReportUpdate,
 )
 from services.permissions_service import require_student_access
+from services.notification_service import create_notification, notify_aee_report_pending
 
 
 router = APIRouter(
@@ -132,6 +133,14 @@ async def create_student_progress_report(
         **data.model_dump(exclude={"professional_type"}),
     )
     db.add(report)
+    await db.flush()
+    if professional_type == "support":
+        await notify_aee_report_pending(
+            db,
+            student=student,
+            report_id=report.id,
+            actor_user_id=current_user.id,
+        )
     await db.commit()
     await db.refresh(report)
     return report
@@ -183,7 +192,7 @@ async def update_student_progress_report(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    await require_report_author(db, current_user, student_id)
+    student = await require_report_author(db, current_user, student_id)
     report = await get_report_or_404(db, student_id, report_id)
     require_report_ownership(current_user, report)
 
@@ -199,6 +208,14 @@ async def update_student_progress_report(
         setattr(report, key, value)
 
     reset_support_report_review(report)
+    if report.professional_type == "support":
+        await notify_aee_report_pending(
+            db,
+            student=student,
+            report_id=report.id,
+            actor_user_id=current_user.id,
+            is_resubmission=True,
+        )
 
     await db.commit()
     await db.refresh(report)
@@ -247,6 +264,31 @@ async def review_support_progress_report(
     report.reviewed_by_name = current_user.name
     report.reviewed_by_role = current_user.role.value
     report.reviewed_at = datetime.utcnow()
+    if report.created_by_id is not None:
+        await create_notification(
+            db,
+            recipient_user_id=report.created_by_id,
+            actor_user_id=current_user.id,
+            event_type=(
+                "support_report_adjustment_requested"
+                if data.review_status == "needs_adjustment"
+                else "support_report_reviewed"
+            ),
+            title=(
+                "AEE solicitou ajuste no relatório"
+                if data.review_status == "needs_adjustment"
+                else "Relatório avaliado pelo AEE"
+            ),
+            message=(
+                "O AEE registrou uma observação e solicitou ajustes no seu relatório."
+                if data.review_status == "needs_adjustment"
+                else "O AEE aprovou seu relatório e registrou uma observação."
+            ),
+            student_id=student_id,
+            resource_type="student_progress_report",
+            resource_id=report.id,
+            action_url=f"/students/{student_id}?tab=behavior",
+        )
     await db.commit()
     await db.refresh(report)
     return report

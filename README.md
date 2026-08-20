@@ -116,6 +116,15 @@ O Produto Mínimo Viável desenvolvido apresenta as seguintes funcionalidades:
 - Controle de ações como registrar ABA, criar avaliações, gerar relatórios e visualizar relatórios;
 - Feedback visual quando o usuário não possui permissão para realizar uma ação.
 
+### Notificações internas
+
+- Central persistente de notificações com contador de itens não lidos;
+- Aviso ao profissional quando um aluno é vinculado ou suas permissões mudam;
+- Aviso ao AEE quando um relatório diário do PA aguarda avaliação ou é reenviado;
+- Devolutiva ao PA quando o AEE aprova o relatório ou solicita ajustes;
+- Avisos administrativos para cadastros profissionais aguardando autorização;
+- Marcação individual ou coletiva de leitura e atalho para o contexto da ação.
+
 ---
 
 ## 4. Público-alvo

@@ -24,5 +24,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/features/students/progress-reports/components/student-progress-reports-panel 2.tsx"]
 }

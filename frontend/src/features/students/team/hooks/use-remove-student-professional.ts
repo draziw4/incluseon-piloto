@@ -26,6 +26,10 @@ export function useRemoveStudentProfessional(
       queryClient.invalidateQueries({
         queryKey: ["students"]
       })
+
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"]
+      })
     }
   })
 }

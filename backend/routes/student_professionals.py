@@ -27,7 +27,8 @@ from models.models import (
     User,
     UserRole,
     Student,
-    StudentProfessional
+    StudentProfessional,
+    StudentProfessionalRole,
 )
 
 from schemas.student_professional import (
@@ -39,6 +40,7 @@ from schemas.student_professional import (
 from services.permissions_service import (
     require_student_access
 )
+from services.notification_service import create_notification
 
 
 router = APIRouter(
@@ -162,6 +164,18 @@ async def add_student_professional(
 
     db.add(link)
 
+    await create_notification(
+        db,
+        recipient_user_id=user_to_link.id,
+        actor_user_id=current_user.id,
+        event_type="student_linked",
+        title="Novo aluno vinculado",
+        message=f"Você foi vinculado ao acompanhamento de {student.name}.",
+        student_id=student.id,
+        resource_type="student_professional",
+        action_url=f"/students/{student.id}",
+    )
+
     await db.commit()
     await db.refresh(link)
 
@@ -266,6 +280,19 @@ async def update_student_professional(
     for permission, value in normalized_permissions.items():
         setattr(link, permission, value)
 
+    await create_notification(
+        db,
+        recipient_user_id=linked_user.id,
+        actor_user_id=current_user.id,
+        event_type="student_permissions_updated",
+        title="Permissões de acompanhamento atualizadas",
+        message=f"Suas permissões no acompanhamento de {student.name} foram atualizadas.",
+        student_id=student.id,
+        resource_type="student_professional",
+        resource_id=link.id,
+        action_url=f"/students/{student.id}",
+    )
+
     await db.commit()
 
     result = await db.execute(
@@ -324,5 +351,16 @@ async def remove_student_professional(
             detail="O responsável principal não pode ser removido da equipe",
         )
 
+    await create_notification(
+        db,
+        recipient_user_id=link.user_id,
+        actor_user_id=current_user.id,
+        event_type="student_unlinked",
+        title="Vínculo de aluno encerrado",
+        message=f"Seu vínculo com o acompanhamento de {student.name} foi encerrado.",
+        resource_type="student_professional",
+        resource_id=link.id,
+        action_url="/students",
+    )
     await db.delete(link)
     await db.commit()

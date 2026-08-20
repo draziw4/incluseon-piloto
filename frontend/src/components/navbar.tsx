@@ -1,9 +1,10 @@
-import { Bell, HelpCircle, Menu } from "lucide-react"
+import { HelpCircle, Menu } from "lucide-react"
 import { useLocation } from "react-router-dom"
 
 import { useAuth } from "../features/auth/hooks/use-auth"
 import { getNavigationTitle } from "../routes/navigation"
 import { isPilotMode } from "../config/pilot"
+import { NotificationBell } from "../features/notifications/components/notification-bell"
 
 type NavbarProps = {
   sidebarOpen: boolean
@@ -42,9 +43,7 @@ export function Navbar({ sidebarOpen, onToggleSidebar }: NavbarProps) {
           {isPilotMode ? "Piloto" : "Ativo"}
         </span>
 
-        <button type="button" aria-label="Notificações" title="Notificações" className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 text-zinc-500 hover:bg-blue-50 hover:text-blue-700">
-          <Bell size={18} />
-        </button>
+        <NotificationBell />
 
         <button type="button" aria-label="Ajuda" title="Ajuda" className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 text-zinc-500 hover:bg-blue-50 hover:text-blue-700">
           <HelpCircle size={18} />

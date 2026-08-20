@@ -37,6 +37,7 @@ from config import settings
 from dependencies import get_current_user
 from services.email_service import send_password_reset_email
 from services.google_identity import verify_google_credential
+from services.notification_service import notify_active_admins_of_pending_account
 
 
 logger = logging.getLogger("incluseon.auth")
@@ -134,6 +135,8 @@ async def register_account(
     )
     db.add(user)
     try:
+        await db.flush()
+        await notify_active_admins_of_pending_account(db, professional=user)
         await db.commit()
     except IntegrityError as error:
         await db.rollback()
@@ -176,6 +179,7 @@ async def google_login(
         select(User).where(User.google_subject == identity.subject)
     )
     user = subject_result.scalar_one_or_none()
+    created_pending_user = False
     if user is None:
         email_result = await db.execute(
             select(User).where(func.lower(User.email) == identity.email)
@@ -202,6 +206,7 @@ async def google_login(
             google_subject=identity.subject,
         )
         db.add(user)
+        created_pending_user = True
     else:
         if user.role == UserRole.ADMIN:
             raise HTTPException(
@@ -215,6 +220,9 @@ async def google_login(
             user.auth_provider = "password_google"
 
     try:
+        if created_pending_user:
+            await db.flush()
+            await notify_active_admins_of_pending_account(db, professional=user)
         await db.commit()
     except IntegrityError as error:
         await db.rollback()

@@ -22,6 +22,10 @@ export function useUpdateStudentProfessional(
           studentId
         ]
       })
+
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"]
+      })
     }
   })
 }
