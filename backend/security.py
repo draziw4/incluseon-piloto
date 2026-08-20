@@ -2,7 +2,8 @@ from pwdlib import PasswordHash
 from datetime import datetime, timedelta, UTC
 from typing import Any
 import secrets
-from jose import jwt,JWTError
+import jwt
+from jwt.exceptions import PyJWTError
 from fastapi.security import OAuth2PasswordBearer
 
 from config import settings
@@ -67,7 +68,7 @@ def decode_token(token: str) -> dict[str, Any] | None:
             settings.secret_key.get_secret_value(),
             algorithms=[settings.algorithm]
         )
-    except JWTError:
+    except PyJWTError:
         return None
 
 
