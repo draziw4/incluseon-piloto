@@ -1,6 +1,9 @@
+from datetime import date
+
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from date_utils import current_local_date
 from models.models import (
     AccountStatus,
     Notification,
@@ -9,6 +12,110 @@ from models.models import (
     User,
     UserRole,
 )
+
+
+BIRTHDAY_NOTICE_DAYS = 7
+
+
+def next_birthday(birth_date: date, today: date) -> date:
+    def birthday_in(year: int) -> date:
+        try:
+            return birth_date.replace(year=year)
+        except ValueError:
+            # Pessoas nascidas em 29/02 recebem o lembrete em 28/02 nos anos comuns.
+            return date(year, 2, 28)
+
+    occurrence = birthday_in(today.year)
+    return occurrence if occurrence >= today else birthday_in(today.year + 1)
+
+
+def birthday_age(birth_date: date, occurrence: date) -> int:
+    return occurrence.year - birth_date.year
+
+
+def birthday_notification_copy(student: Student, occurrence: date, days_until: int) -> tuple[str, str]:
+    age = birthday_age(student.birth_date, occurrence)
+    if days_until == 0:
+        return (
+            "Aniversário de aluno hoje",
+            f"Hoje é aniversário de {student.name}, que está completando {age} anos.",
+        )
+    return (
+        "Aniversário de aluno próximo",
+        f"O aniversário de {student.name} será em {occurrence.strftime('%d/%m')}, "
+        f"quando completará {age} anos.",
+    )
+
+
+async def ensure_student_birthday_notifications(
+    db: AsyncSession,
+    *,
+    user: User,
+    today: date | None = None,
+) -> int:
+    reference_date = today or current_local_date()
+    students_query = select(Student).outerjoin(
+        StudentProfessional,
+        and_(
+            StudentProfessional.student_id == Student.id,
+            StudentProfessional.user_id == user.id,
+            StudentProfessional.can_view.is_(True),
+        ),
+    )
+    if user.role != UserRole.ADMIN:
+        students_query = students_query.where(
+            or_(
+                Student.psychologist_id == user.id,
+                StudentProfessional.user_id == user.id,
+            )
+        )
+
+    students_result = await db.execute(students_query.distinct())
+    upcoming: list[tuple[Student, date, int, str]] = []
+    for student in students_result.scalars().all():
+        occurrence = next_birthday(student.birth_date, reference_date)
+        days_until = (occurrence - reference_date).days
+        if days_until > BIRTHDAY_NOTICE_DAYS:
+            continue
+        event_type = "student_birthday_today" if days_until == 0 else "student_birthday_upcoming"
+        upcoming.append((student, occurrence, days_until, event_type))
+
+    if not upcoming:
+        return 0
+
+    student_ids = {student.id for student, *_rest in upcoming}
+    occurrence_years = {occurrence.year for _student, occurrence, *_rest in upcoming}
+    existing_result = await db.execute(
+        select(Notification.student_id, Notification.event_type, Notification.resource_id).where(
+            Notification.recipient_user_id == user.id,
+            Notification.resource_type == "student_birthday",
+            Notification.student_id.in_(student_ids),
+            Notification.resource_id.in_(occurrence_years),
+        )
+    )
+    existing = set(existing_result.all())
+
+    created_count = 0
+    for student, occurrence, days_until, event_type in upcoming:
+        key = (student.id, event_type, occurrence.year)
+        if key in existing:
+            continue
+        title, message = birthday_notification_copy(student, occurrence, days_until)
+        await create_notification(
+            db,
+            recipient_user_id=user.id,
+            event_type=event_type,
+            title=title,
+            message=message,
+            student_id=student.id,
+            resource_type="student_birthday",
+            resource_id=occurrence.year,
+            action_url=f"/students/{student.id}",
+        )
+        existing.add(key)
+        created_count += 1
+
+    return created_count
 
 
 async def create_notification(

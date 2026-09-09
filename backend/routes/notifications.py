@@ -13,6 +13,7 @@ from schemas.notification import (
     NotificationResponse,
     NotificationUnreadCount,
 )
+from services.notification_service import ensure_student_birthday_notifications
 
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -25,6 +26,9 @@ async def list_notifications(
     unread_only: bool = Query(default=False),
     limit: int = Query(default=30, ge=1, le=100),
 ):
+    if await ensure_student_birthday_notifications(db, user=current_user):
+        await db.commit()
+
     query = select(Notification).where(
         Notification.recipient_user_id == current_user.id
     )
@@ -51,6 +55,9 @@ async def get_unread_notification_count(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
+    if await ensure_student_birthday_notifications(db, user=current_user):
+        await db.commit()
+
     result = await db.execute(
         select(func.count(Notification.id)).where(
             Notification.recipient_user_id == current_user.id,

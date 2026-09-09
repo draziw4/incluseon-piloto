@@ -303,6 +303,28 @@ class Student(Base):
         nullable=True
     )
 
+    strengths: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    difficulties: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
+    takes_medication: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false"
+    )
+
+    medications: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
 
     school_name: Mapped[str | None] = mapped_column(
         String(255),
@@ -362,8 +384,6 @@ class Student(Base):
 ] = relationship(
     cascade="all, delete-orphan"
 )
-    strengths: Mapped[str | None]
-
     learning_profile: Mapped[str | None]
 
     preferred_reinforcers: Mapped[str | None]

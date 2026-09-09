@@ -1,9 +1,9 @@
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from pydantic import ValidationError
 
-from schemas.student import StudentCreate, StudentUpdate
+from schemas.student import StudentCreate, StudentResponse, StudentUpdate, calculate_age
 
 
 class StudentSchemaTests(unittest.TestCase):
@@ -15,18 +15,36 @@ class StudentSchemaTests(unittest.TestCase):
             {"name": "Maria Silva"}
         )
 
-    def test_rejects_age_outside_supported_range(self):
-        with self.assertRaises(ValidationError):
-            StudentUpdate(age=0)
+    def test_calculates_current_age_from_birth_date(self):
+        self.assertEqual(calculate_age(date(2016, 9, 9), date(2026, 9, 9)), 10)
+        self.assertEqual(calculate_age(date(2016, 9, 10), date(2026, 9, 9)), 9)
 
+    def test_response_replaces_stale_stored_age(self):
+        birth_date = date.today().replace(year=date.today().year - 10)
+        response = StudentResponse.model_validate({
+            "id": 1,
+            "name": "Maria Silva",
+            "age": None,
+            "birth_date": birth_date,
+            "takes_medication": False,
+            "psychologist_id": 2,
+            "created_at": datetime.now(),
+        })
+        self.assertEqual(response.age, calculate_age(birth_date))
+
+    def test_requires_medication_names_when_usage_is_marked(self):
         with self.assertRaises(ValidationError):
-            StudentUpdate(age=121)
+            StudentCreate(
+                name="Maria Silva",
+                birth_date=date(2016, 1, 1),
+                takes_medication=True,
+                medications="",
+            )
 
     def test_rejects_future_birth_date(self):
         with self.assertRaises(ValidationError):
             StudentCreate(
                 name="Maria Silva",
-                age=10,
                 birth_date=date.today() + timedelta(days=1)
             )
 

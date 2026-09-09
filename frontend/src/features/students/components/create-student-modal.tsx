@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -30,11 +30,16 @@ const {
   register,
   handleSubmit,
   reset,
+  control,
   formState: { errors }
 } = useForm<CreateStudentFormData, unknown, CreateStudentData>({
   resolver: zodResolver(createStudentSchema),
   defaultValues: getStudentFormValues(student)
 })
+
+const birthDate = useWatch({ control, name: "birth_date" })
+const takesMedication = useWatch({ control, name: "takes_medication" })
+const calculatedAge = calculateAge(birthDate)
 
 useEffect(() => {
   if (open) {
@@ -125,25 +130,6 @@ async function onSubmit(data: CreateStudentData) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Idade
-            </label>
-
-            <input
-              type="number"
-              {...register("age")}
-              className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
-              placeholder="Ex: 12"
-            />
-
-            {errors.age && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.age.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
               Data de nascimento
             </label>
 
@@ -162,6 +148,22 @@ async function onSubmit(data: CreateStudentData) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Idade atual
+            </label>
+
+            <div className="w-full rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-zinc-700">
+              {calculatedAge === null
+                ? "Calculada pela data de nascimento"
+                : `${calculatedAge} ${calculatedAge === 1 ? "ano" : "anos"}`}
+            </div>
+
+            <p className="mt-1 text-xs text-zinc-500">
+              Atualizada automaticamente.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
               Diagnóstico
             </label>
 
@@ -170,6 +172,60 @@ async function onSubmit(data: CreateStudentData) {
               className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
               placeholder="Ex: TEA, DI, TDAH..."
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Potencialidades
+            </label>
+
+            <textarea
+              {...register("strengths")}
+              className="min-h-24 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+              placeholder="Habilidades, interesses, facilidades e situações em que o aluno se destaca."
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Dificuldades
+            </label>
+
+            <textarea
+              {...register("difficulties")}
+              className="min-h-24 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
+              placeholder="Barreiras, necessidades de apoio e situações que exigem mais acompanhamento."
+            />
+          </div>
+
+          <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 md:col-span-2">
+            <label className="flex items-center gap-3 text-sm font-medium text-zinc-700">
+              <input
+                type="checkbox"
+                {...register("takes_medication")}
+                className="h-4 w-4 rounded border-blue-200 text-blue-600 focus:ring-blue-500"
+              />
+              O aluno faz uso de medicação atualmente
+            </label>
+
+            <div className="mt-4">
+              <label className="mb-1 block text-sm font-medium text-zinc-700">
+                Quais medicamentos?
+              </label>
+
+              <textarea
+                {...register("medications")}
+                disabled={!takesMedication}
+                className="min-h-20 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+                placeholder={takesMedication ? "Informe nome, dosagem e horários, quando conhecidos." : "Marque a opção acima para informar os medicamentos."}
+              />
+
+              {errors.medications && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.medications.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div>
@@ -274,9 +330,12 @@ async function onSubmit(data: CreateStudentData) {
 function getStudentFormValues(student?: Student | null): CreateStudentFormData {
   return {
     name: student?.name ?? "",
-    age: student?.age ?? "",
     birth_date: student?.birth_date ?? "",
     diagnosis: student?.diagnosis ?? "",
+    strengths: student?.strengths ?? "",
+    difficulties: student?.difficulties ?? "",
+    takes_medication: student?.takes_medication ?? false,
+    medications: student?.medications ?? "",
     school_name: student?.school_name ?? "",
     guardian_name: student?.guardian_name ?? "",
     guardian_phone: student?.guardian_phone ?? "",
@@ -284,4 +343,22 @@ function getStudentFormValues(student?: Student | null): CreateStudentFormData {
     sensory_notes: student?.sensory_notes ?? "",
     general_observations: student?.general_observations ?? ""
   }
+}
+
+function calculateAge(birthDate?: string): number | null {
+  if (!birthDate) return null
+
+  const [year, month, day] = birthDate.split("-").map(Number)
+  if (!year || !month || !day) return null
+
+  const today = new Date()
+  let age = today.getFullYear() - year
+  if (
+    today.getMonth() + 1 < month
+    || (today.getMonth() + 1 === month && today.getDate() < day)
+  ) {
+    age -= 1
+  }
+
+  return age >= 0 ? age : null
 }

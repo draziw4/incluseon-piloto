@@ -7,6 +7,10 @@ export type Student = {
   birth_date: string
 
   diagnosis?: string | null
+  strengths?: string | null
+  difficulties?: string | null
+  takes_medication: boolean
+  medications?: string | null
   school_name?: string | null
 
   guardian_name?: string | null

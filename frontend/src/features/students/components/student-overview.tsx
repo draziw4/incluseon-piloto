@@ -8,6 +8,23 @@ export function StudentOverview({ student }: Props) {
   return (
     <div className="space-y-4">
       <OverviewCard
+        title="Potencialidades"
+        content={student.strengths}
+      />
+
+      <OverviewCard
+        title="Dificuldades"
+        content={student.difficulties}
+      />
+
+      <OverviewCard
+        title="Medicação"
+        content={student.takes_medication
+          ? student.medications || "Uso de medicação informado, sem medicamentos detalhados."
+          : "Não faz uso de medicação atualmente."}
+      />
+
+      <OverviewCard
         title="Comunicação"
         content={student.communication_notes}
       />

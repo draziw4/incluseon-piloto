@@ -32,6 +32,7 @@ from models.models import (
 )
 
 from schemas.student import (
+    calculate_age,
     StudentCreate,
     StudentResponse,
     StudentUpdate
@@ -73,6 +74,7 @@ async def create_student(
 ):
     student = Student(
         psychologist_id=current_user.id,
+        age=calculate_age(data.birth_date),
         **data.model_dump()
     )
 
@@ -249,6 +251,18 @@ async def update_student(
             student,
             field,
             value
+        )
+
+    if "birth_date" in update_data:
+        student.age = calculate_age(student.birth_date)
+
+    if not student.takes_medication:
+        student.medications = None
+
+    if student.takes_medication and not (student.medications or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Informe quais medicamentos o aluno utiliza",
         )
 
     await db.commit()

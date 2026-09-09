@@ -4,6 +4,7 @@ from services.assessment_instruments import (
     format_instrument,
     latest_instruments_by_type,
 )
+from schemas.student import calculate_age
 
 
 def format_behavior_records(records):
@@ -124,11 +125,13 @@ REGRAS OBRIGATÓRIAS
 
 IDENTIFICAÇÃO CADASTRAL DISPONÍVEL
 Nome: {student.name}
-Idade: {student.age}
+Idade: {calculate_age(student.birth_date) if student.birth_date else "Não informado"}
 Data de nascimento: {student.birth_date.strftime("%d/%m/%Y") if student.birth_date else "Não informado"}
 Escola: {student.school_name or "Não informado"}
 Responsável: {student.guardian_name or "Não informado"}
 Diagnóstico informado no cadastro (dado complementar): {student.diagnosis or "Não informado"}
+Potencialidades registradas no cadastro: {getattr(student, "strengths", None) or "Não informado"}
+Dificuldades registradas no cadastro: {getattr(student, "difficulties", None) or "Não informado"}
 Comunicação registrada no cadastro: {student.communication_notes or "Não informado"}
 Aspectos sensoriais registrados no cadastro: {student.sensory_notes or "Não informado"}
 Observações gerais do cadastro: {student.general_observations or "Não informado"}

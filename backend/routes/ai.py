@@ -47,6 +47,7 @@ from services.assessment_instruments import (
     latest_instruments_by_type,
     missing_required_instruments,
 )
+from schemas.student import calculate_age
 
 
 router = APIRouter(
@@ -176,7 +177,7 @@ Este documento foi consolidado localmente, sem envio de dados para IA externa. E
 
 5.4.1 Identificação do estudante
 Nome: {student.name}
-Idade: {student.age if student.age is not None else "Não informado nos instrumentais"}
+Idade: {calculate_age(student.birth_date) if student.birth_date else "Não informado nos instrumentais"}
 Escola: {student.school_name or "Não informado nos instrumentais"}
 {evidence("student_assessment", ["grade_year", "class_and_shift", "school_network", "special_education_target", "school_entry_date", "has_health_diagnosis", "health_diagnosis_details"])}
 

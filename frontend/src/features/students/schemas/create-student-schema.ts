@@ -3,11 +3,6 @@ import { z } from "zod"
 export const createStudentSchema = z.object({
   name: z.string().min(3, "Nome precisa ter pelo menos 3 caracteres"),
 
-  age: z.coerce
-    .number()
-    .min(1, "Idade inválida")
-    .max(120, "Idade inválida"),
-
   birth_date: z
     .string()
     .min(1, "Data de nascimento é obrigatória")
@@ -17,6 +12,10 @@ export const createStudentSchema = z.object({
     ),
 
   diagnosis: z.string().optional(),
+  strengths: z.string().optional(),
+  difficulties: z.string().optional(),
+  takes_medication: z.boolean(),
+  medications: z.string().optional(),
   school_name: z.string().optional(),
 
   guardian_name: z.string().optional(),
@@ -25,6 +24,14 @@ export const createStudentSchema = z.object({
   communication_notes: z.string().optional(),
   sensory_notes: z.string().optional(),
   general_observations: z.string().optional()
+}).superRefine((data, context) => {
+  if (data.takes_medication && !data.medications?.trim()) {
+    context.addIssue({
+      code: "custom",
+      path: ["medications"],
+      message: "Informe quais medicamentos o aluno utiliza"
+    })
+  }
 })
 
 export type CreateStudentFormData = z.input<typeof createStudentSchema>
