@@ -99,26 +99,37 @@ export function StudentFolderSection({
           ) : (
             <p className="truncate font-bold text-blue-950">{folder.label}</p>
           )}
-          <p className="truncate text-sm text-zinc-500">{folder.description}</p>
+          <p className="truncate text-sm text-zinc-500">
+            {folder.description}{folder.isCustom ? "" : " • Pasta automática"}
+          </p>
+
+          {!isRenaming && folder.isCustom && folder.canManage && folder.folderId ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setIsRenaming(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                <Pencil size={13} />
+                Renomear
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (folder.folderId) void onDeleteFolder(folder.folderId, folder.label)
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+              >
+                <Trash2 size={13} />
+                Excluir pasta
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <span className="hidden shrink-0 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 sm:inline">
           {folder.students.length} {folder.students.length === 1 ? "aluno" : "alunos"}
         </span>
-
-        {folder.isCustom && folder.canManage && folder.folderId ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (folder.folderId) void onDeleteFolder(folder.folderId, folder.label)
-            }}
-            aria-label={`Excluir pasta ${folder.label}`}
-            title="Excluir pasta sem apagar os alunos"
-            className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600"
-          >
-            <Trash2 size={17} />
-          </button>
-        ) : null}
 
         <button
           type="button"
