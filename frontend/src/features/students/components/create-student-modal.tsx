@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useForm, useWatch } from "react-hook-form"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -50,6 +51,17 @@ useEffect(() => {
   }
 }, [open, reset, student])
 
+useEffect(() => {
+  if (!open) return
+
+  const previousOverflow = document.body.style.overflow
+  document.body.style.overflow = "hidden"
+
+  return () => {
+    document.body.style.overflow = previousOverflow
+  }
+}, [open])
+
 function handleClose() {
   setActionError(null)
   onClose()
@@ -79,12 +91,17 @@ async function onSubmit(data: CreateStudentData) {
 
   if (!open) return null
 
-  return (
-    <div className="motion-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-      <div className="motion-dialog max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-6 flex items-start justify-between">
+  return createPortal(
+    <div className="motion-overlay fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-slate-950/40 px-3 py-4 sm:items-center sm:px-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="student-form-title"
+        className="motion-dialog max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-2xl bg-white p-6 shadow-xl"
+      >
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 mb-6 flex items-start justify-between border-b border-blue-50 bg-white/95 px-6 py-5 backdrop-blur-sm">
           <div>
-            <h2 className="text-2xl font-bold text-blue-950">
+            <h2 id="student-form-title" className="text-2xl font-bold text-blue-950">
               {isEditing ? "Editar aluno" : "Cadastrar novo aluno"}
             </h2>
 
@@ -391,7 +408,8 @@ async function onSubmit(data: CreateStudentData) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
