@@ -1,5 +1,6 @@
 import type { Student } from "../types/student"
 import { Pencil, Trash2 } from "lucide-react"
+import { formatStudentClassroom } from "../classroom-options"
 
 type Props = {
   student: Student
@@ -42,10 +43,15 @@ export function StudentHeader({ student, canManage, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <InfoItem
           label="Escola"
           value={student.school_name}
+        />
+
+        <InfoItem
+          label="Ano e turma"
+          value={formatStudentClassroom(student.school_grade, student.class_group)}
         />
 
         <InfoItem

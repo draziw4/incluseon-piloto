@@ -48,6 +48,25 @@ class StudentSchemaTests(unittest.TestCase):
                 birth_date=date.today() + timedelta(days=1)
             )
 
+    def test_accepts_and_normalizes_school_classroom(self):
+        student = StudentCreate(
+            name="Maria Silva",
+            birth_date=date(2016, 1, 1),
+            school_grade=" 1º ano do Ensino Médio ",
+            class_group=" A ",
+        )
+
+        self.assertEqual(student.school_grade, "1º ano do Ensino Médio")
+        self.assertEqual(student.class_group, "A")
+
+    def test_empty_school_classroom_values_become_none(self):
+        update = StudentUpdate(school_grade="  ", class_group="")
+
+        self.assertEqual(
+            update.model_dump(exclude_unset=True),
+            {"school_grade": None, "class_group": None},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

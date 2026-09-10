@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import { Pencil, Trash2 } from "lucide-react"
 
 import type { Student } from "../types/student"
+import { formatStudentClassroom } from "../classroom-options"
 
 type Props = {
   student: Student
@@ -35,6 +36,13 @@ export function StudentCard({ student, canManage, onEdit, onDelete }: Props) {
             Escola:{" "}
             <span className="font-medium">
               {student.school_name || "-"}
+            </span>
+          </p>
+
+          <p>
+            Turma:{" "}
+            <span className="font-medium">
+              {formatStudentClassroom(student.school_grade, student.class_group)}
             </span>
           </p>
 

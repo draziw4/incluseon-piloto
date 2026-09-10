@@ -12,6 +12,8 @@ export type Student = {
   takes_medication: boolean
   medications?: string | null
   school_name?: string | null
+  school_grade?: string | null
+  class_group?: string | null
 
   guardian_name?: string | null
   guardian_phone?: string | null

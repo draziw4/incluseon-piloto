@@ -128,6 +128,8 @@ Nome: {student.name}
 Idade: {calculate_age(student.birth_date) if student.birth_date else "Não informado"}
 Data de nascimento: {student.birth_date.strftime("%d/%m/%Y") if student.birth_date else "Não informado"}
 Escola: {student.school_name or "Não informado"}
+Ano/série: {getattr(student, "school_grade", None) or "Não informado"}
+Turma: {getattr(student, "class_group", None) or "Não informado"}
 Responsável: {student.guardian_name or "Não informado"}
 Diagnóstico informado no cadastro (dado complementar): {student.diagnosis or "Não informado"}
 Potencialidades registradas no cadastro: {getattr(student, "strengths", None) or "Não informado"}

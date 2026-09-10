@@ -17,6 +17,8 @@ export const createStudentSchema = z.object({
   takes_medication: z.boolean(),
   medications: z.string().optional(),
   school_name: z.string().optional(),
+  school_grade: z.string().min(1, "Selecione o ano ou série escolar"),
+  class_group: z.string().min(1, "Selecione a turma"),
 
   guardian_name: z.string().optional(),
   guardian_phone: z.string().optional(),

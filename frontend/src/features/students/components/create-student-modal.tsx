@@ -12,6 +12,7 @@ import {
 import { useCreateStudent } from "../hooks/use-create-student"
 import { useUpdateStudent } from "../hooks/use-update-student"
 import type { Student } from "../types/student"
+import { classGroupOptions, schoolGradeOptions } from "../classroom-options"
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
 
 type Props = {
@@ -228,7 +229,7 @@ async function onSubmit(data: CreateStudentData) {
             </div>
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Escola
             </label>
@@ -238,6 +239,50 @@ async function onSubmit(data: CreateStudentData) {
               className="w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500"
               placeholder="Nome da escola"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Ano ou série escolar
+            </label>
+
+            <select
+              {...register("school_grade")}
+              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none focus:border-blue-500"
+            >
+              <option value="">Selecione o ano ou série</option>
+              {schoolGradeOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+
+            {errors.school_grade && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.school_grade.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Turma
+            </label>
+
+            <select
+              {...register("class_group")}
+              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none focus:border-blue-500"
+            >
+              <option value="">Selecione a turma</option>
+              {classGroupOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+
+            {errors.class_group && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.class_group.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -337,6 +382,8 @@ function getStudentFormValues(student?: Student | null): CreateStudentFormData {
     takes_medication: student?.takes_medication ?? false,
     medications: student?.medications ?? "",
     school_name: student?.school_name ?? "",
+    school_grade: student?.school_grade ?? "",
+    class_group: student?.class_group ?? "",
     guardian_name: student?.guardian_name ?? "",
     guardian_phone: student?.guardian_phone ?? "",
     communication_notes: student?.communication_notes ?? "",

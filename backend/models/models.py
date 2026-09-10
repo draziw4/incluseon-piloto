@@ -331,6 +331,16 @@ class Student(Base):
         nullable=True
     )
 
+    school_grade: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    class_group: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True
+    )
+
 
     guardian_name: Mapped[str | None] = mapped_column(
         String(255),

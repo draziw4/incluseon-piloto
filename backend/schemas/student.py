@@ -22,6 +22,8 @@ class StudentBase(BaseModel):
     medications: str | None = None
 
     school_name: str | None = None
+    school_grade: str | None = Field(default=None, max_length=100)
+    class_group: str | None = Field(default=None, max_length=50)
 
     guardian_name: str | None = None
     guardian_phone: str | None = None
@@ -37,6 +39,12 @@ class StudentBase(BaseModel):
             raise ValueError("Data de nascimento não pode estar no futuro")
 
         return value
+
+    @field_validator("school_grade", "class_group")
+    @classmethod
+    def normalize_classroom_fields(cls, value: str | None) -> str | None:
+        normalized = (value or "").strip()
+        return normalized or None
 
     @model_validator(mode="after")
     def medication_details_match_usage(self):
@@ -60,6 +68,8 @@ class StudentUpdate(BaseModel):
     medications: str | None = None
 
     school_name: str | None = None
+    school_grade: str | None = Field(default=None, max_length=100)
+    class_group: str | None = Field(default=None, max_length=50)
 
     guardian_name: str | None = None
     guardian_phone: str | None = None
@@ -75,6 +85,12 @@ class StudentUpdate(BaseModel):
             raise ValueError("Data de nascimento não pode estar no futuro")
 
         return value
+
+    @field_validator("school_grade", "class_group")
+    @classmethod
+    def normalize_classroom_fields(cls, value: str | None) -> str | None:
+        normalized = (value or "").strip()
+        return normalized or None
 
 
 

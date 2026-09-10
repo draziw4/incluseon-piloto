@@ -179,6 +179,8 @@ Este documento foi consolidado localmente, sem envio de dados para IA externa. E
 Nome: {student.name}
 Idade: {calculate_age(student.birth_date) if student.birth_date else "Não informado nos instrumentais"}
 Escola: {student.school_name or "Não informado nos instrumentais"}
+Ano/série: {getattr(student, "school_grade", None) or "Não informado nos instrumentais"}
+Turma: {getattr(student, "class_group", None) or "Não informado nos instrumentais"}
 {evidence("student_assessment", ["grade_year", "class_and_shift", "school_network", "special_education_target", "school_entry_date", "has_health_diagnosis", "health_diagnosis_details"])}
 
 5.4.2 Histórico escolar e trajetória educacional
