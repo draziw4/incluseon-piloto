@@ -13,6 +13,7 @@ import { useCreateStudent } from "../hooks/use-create-student"
 import { useUpdateStudent } from "../hooks/use-update-student"
 import type { Student } from "../types/student"
 import { classGroupOptions, schoolGradeOptions } from "../classroom-options"
+import { useStudentFolders } from "../folders/hooks"
 import { getApiErrorMessage } from "@/routes/utils/get-api-error-message"
 
 type Props = {
@@ -24,6 +25,7 @@ type Props = {
 export function StudentFormModal({ open, onClose, student }: Props) {
   const createMutation = useCreateStudent()
   const updateMutation = useUpdateStudent()
+  const { data: folders = [], isLoading: isLoadingFolders } = useStudentFolders(open)
   const [actionError, setActionError] = useState<string | null>(null)
   const isEditing = Boolean(student)
 
@@ -78,8 +80,8 @@ async function onSubmit(data: CreateStudentData) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+    <div className="motion-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+      <div className="motion-dialog max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-blue-950">
@@ -285,6 +287,27 @@ async function onSubmit(data: CreateStudentData) {
             )}
           </div>
 
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Pasta de organização
+            </label>
+
+            <select
+              {...register("folder_id")}
+              disabled={isLoadingFolders}
+              className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 outline-none focus:border-blue-500 disabled:bg-zinc-50 disabled:text-zinc-400"
+            >
+              <option value="">Organizar automaticamente pelo ano e turma</option>
+              {folders.filter((folder) => folder.can_manage).map((folder) => (
+                <option key={folder.id} value={String(folder.id)}>{folder.name}</option>
+              ))}
+            </select>
+
+            <p className="mt-1 text-xs text-zinc-500">
+              Você também pode criar e renomear pastas na tela Meus alunos.
+            </p>
+          </div>
+
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Responsável
@@ -384,6 +407,7 @@ function getStudentFormValues(student?: Student | null): CreateStudentFormData {
     school_name: student?.school_name ?? "",
     school_grade: student?.school_grade ?? "",
     class_group: student?.class_group ?? "",
+    folder_id: student?.folder_id ? String(student.folder_id) : "",
     guardian_name: student?.guardian_name ?? "",
     guardian_phone: student?.guardian_phone ?? "",
     communication_notes: student?.communication_notes ?? "",

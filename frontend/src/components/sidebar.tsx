@@ -17,7 +17,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   if (!open) return null
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r border-blue-100 bg-white shadow-xl md:sticky md:top-0 md:shadow-none">
+    <aside className="motion-sidebar fixed inset-y-0 left-0 z-40 flex h-screen w-64 shrink-0 flex-col border-r border-blue-100 bg-white shadow-xl md:sticky md:top-0 md:shadow-none">
       <div className="flex h-16 items-center gap-3 border-b border-blue-100 px-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
           <Sparkles size={18} />
@@ -54,7 +54,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               end={item.path === "/"}
               className={({ isActive }) =>
                 [
-                  "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
                   isActive
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-zinc-600 hover:bg-blue-50 hover:text-blue-700"
@@ -69,7 +69,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </nav>
 
       <div className="space-y-3 border-t border-blue-100 p-4">
-        <NavLink to="/settings" className="flex w-full items-center gap-3 rounded-xl border border-blue-100 px-3 py-3 text-sm font-medium text-blue-700 hover:bg-blue-50">
+        <NavLink to="/settings" className="flex w-full items-center gap-3 rounded-xl border border-blue-100 px-3 py-3 text-sm font-medium text-blue-700 transition-all duration-200 hover:bg-blue-50">
           <Settings size={18} />
           Configurações
         </NavLink>

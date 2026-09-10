@@ -19,6 +19,11 @@ export const createStudentSchema = z.object({
   school_name: z.string().optional(),
   school_grade: z.string().min(1, "Selecione o ano ou série escolar"),
   class_group: z.string().min(1, "Selecione a turma"),
+  folder_id: z
+    .string()
+    .optional()
+    .transform((value) => value ? Number(value) : null)
+    .refine((value) => value === null || (Number.isInteger(value) && value > 0), "Pasta inválida"),
 
   guardian_name: z.string().optional(),
   guardian_phone: z.string().optional(),

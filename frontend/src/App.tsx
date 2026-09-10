@@ -11,6 +11,7 @@ import { ProtectedRoute } from "./routes/protected-route"
 import { ToolRoute } from "./routes/tool-route"
 import { DashboardLayout } from "./layouts/dashboard-layout"
 import { isPilotMode } from "./config/pilot"
+import { PageLoadingFallback } from "./components/page-loading-fallback"
 
 const LoginPage = lazy(() => import("./pages/login-page").then((module) => ({ default: module.LoginPage })))
 const RegisterPage = lazy(() => import("./pages/register-page").then((module) => ({ default: module.RegisterPage })))
@@ -38,38 +39,35 @@ const AdminProfessionalsPage = lazy(() => import("./pages/admin-professionals-pa
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="p-6 text-sm text-slate-500">Carregando...</div>}>
-      <Routes>
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/forgot-password" element={<PasswordResetPage />} />
-        <Route path="/reset-password" element={<PasswordResetPage />} />
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/forgot-password" element={<PasswordResetPage />} />
+          <Route path="/reset-password" element={<PasswordResetPage />} />
 
-        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route index element={<ToolRoute tool="dashboard"><DashboardPage /></ToolRoute>} />
-          <Route path="orientacoes" element={<ToolRoute tool="dashboard"><ProfessionalGuidancePage /></ToolRoute>} />
-          <Route path="students" element={<ToolRoute tool="students"><StudentsPage /></ToolRoute>} />
-          <Route path="students/:id" element={<ToolRoute tool="students"><StudentProfilePage /></ToolRoute>} />
-          <Route path="appointments" element={<ToolRoute tool="appointments"><AppointmentsPage /></ToolRoute>} />
-          <Route path="behavior-records" element={<ToolRoute tool="behavior_records"><BehaviorRecordsPage /></ToolRoute>} />
-          <Route path="assessments" element={<ToolRoute tool="assessments"><AssessmentsPage /></ToolRoute>} />
-          <Route path="interviews" element={<ToolRoute tool="interviews"><InterviewsPage /></ToolRoute>} />
-          <Route path="goals" element={<ToolRoute tool="goals"><GoalsPage /></ToolRoute>} />
-          <Route path="case-studies" element={<ToolRoute tool="ai_case_studies"><CaseStudiesPage /></ToolRoute>} />
-          <Route path="reports" element={<ToolRoute tool="reports"><ReportsPage /></ToolRoute>} />
-          <Route path="analytics" element={<ToolRoute tool="analytics"><AnalyticsPage /></ToolRoute>} />
-          <Route path="admin/professionals" element={<ToolRoute tool="admin_professionals"><AdminProfessionalsPage /></ToolRoute>} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="pilot-feedback" element={isPilotMode ? <ToolRoute tool="pilot_feedback"><PilotFeedbackPage /></ToolRoute> : <Navigate to="/" replace />} />
-        </Route>
+          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route index element={<ToolRoute tool="dashboard"><DashboardPage /></ToolRoute>} />
+            <Route path="orientacoes" element={<ToolRoute tool="dashboard"><ProfessionalGuidancePage /></ToolRoute>} />
+            <Route path="students" element={<ToolRoute tool="students"><StudentsPage /></ToolRoute>} />
+            <Route path="students/:id" element={<ToolRoute tool="students"><StudentProfilePage /></ToolRoute>} />
+            <Route path="appointments" element={<ToolRoute tool="appointments"><AppointmentsPage /></ToolRoute>} />
+            <Route path="behavior-records" element={<ToolRoute tool="behavior_records"><BehaviorRecordsPage /></ToolRoute>} />
+            <Route path="assessments" element={<ToolRoute tool="assessments"><AssessmentsPage /></ToolRoute>} />
+            <Route path="interviews" element={<ToolRoute tool="interviews"><InterviewsPage /></ToolRoute>} />
+            <Route path="goals" element={<ToolRoute tool="goals"><GoalsPage /></ToolRoute>} />
+            <Route path="case-studies" element={<ToolRoute tool="ai_case_studies"><CaseStudiesPage /></ToolRoute>} />
+            <Route path="reports" element={<ToolRoute tool="reports"><ReportsPage /></ToolRoute>} />
+            <Route path="analytics" element={<ToolRoute tool="analytics"><AnalyticsPage /></ToolRoute>} />
+            <Route path="admin/professionals" element={<ToolRoute tool="admin_professionals"><AdminProfessionalsPage /></ToolRoute>} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="pilot-feedback" element={isPilotMode ? <ToolRoute tool="pilot_feedback"><PilotFeedbackPage /></ToolRoute> : <Navigate to="/" replace />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Suspense>
     </BrowserRouter>
   )

@@ -39,8 +39,8 @@ export function PasswordResetPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-blue-50 px-6">
-      <form onSubmit={submit} className="w-full max-w-md rounded-3xl border border-blue-100 bg-white p-8 shadow-xl">
+    <main className="motion-page flex min-h-screen items-center justify-center bg-blue-50 px-6">
+      <form onSubmit={submit} className="motion-auth-card w-full max-w-md rounded-3xl border border-blue-100 bg-white p-8 shadow-xl">
         <h1 className="text-2xl font-bold text-blue-950">{token ? "Criar nova senha" : "Recuperar acesso"}</h1>
         <p className="mt-2 text-sm text-zinc-500">
           {token ? "Escolha uma senha segura para sua conta." : "Informe o e-mail cadastrado para receber as instruções."}
@@ -58,7 +58,7 @@ export function PasswordResetPage() {
               <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded-xl border border-blue-100 px-4 py-3 outline-none focus:border-blue-500" />
             </label>
           )}
-          {message && <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-700">{message}</p>}
+          {message && <p className="motion-notice rounded-xl bg-blue-50 p-3 text-sm text-blue-700">{message}</p>}
           <button disabled={submitting} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">
             {submitting ? "Enviando..." : token ? "Redefinir senha" : "Enviar instruções"}
           </button>

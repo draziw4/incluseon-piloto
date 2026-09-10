@@ -112,7 +112,7 @@ export function ProfessionalGuidancePage() {
                 aria-pressed={selected}
                 onClick={() => setActiveSection(tab.id)}
                 className={[
-                  "flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-xs font-semibold transition sm:text-sm",
+                  "flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl px-3 py-3 text-center text-xs font-semibold transition-all sm:text-sm",
                   selected
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
@@ -127,12 +127,14 @@ export function ProfessionalGuidancePage() {
         </div>
       </section>
 
-      {activeSection === "overview" && <OverviewSection />}
-      {activeSection === "flow" && <AeeFlowSection />}
-      {activeSection === "case-study" && <CaseStudySection />}
-      {activeSection === "aee" && <AeeProfessionalSection />}
-      {activeSection === "pa" && <SupportProfessionalSection />}
-      {activeSection === "team" && <SchoolTeamSection />}
+      <div key={activeSection} className="motion-tab">
+        {activeSection === "overview" && <OverviewSection />}
+        {activeSection === "flow" && <AeeFlowSection />}
+        {activeSection === "case-study" && <CaseStudySection />}
+        {activeSection === "aee" && <AeeProfessionalSection />}
+        {activeSection === "pa" && <SupportProfessionalSection />}
+        {activeSection === "team" && <SchoolTeamSection />}
+      </div>
 
       <footer className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs leading-5 text-slate-500">
         Conteúdo informativo organizado a partir do Documento Orientador de Educação Especial Inclusiva de 2026. Consulte os normativos vigentes e os fluxos da sua rede sempre que houver atualização institucional.

@@ -14,6 +14,7 @@ export type Student = {
   school_name?: string | null
   school_grade?: string | null
   class_group?: string | null
+  folder_id?: number | null
 
   guardian_name?: string | null
   guardian_phone?: string | null

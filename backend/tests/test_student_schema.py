@@ -67,6 +67,19 @@ class StudentSchemaTests(unittest.TestCase):
             {"school_grade": None, "class_group": None},
         )
 
+    def test_accepts_custom_folder_reference(self):
+        student = StudentCreate(
+            name="Maria Silva",
+            birth_date=date(2016, 1, 1),
+            folder_id=7,
+        )
+
+        self.assertEqual(student.folder_id, 7)
+
+    def test_rejects_invalid_custom_folder_reference(self):
+        with self.assertRaises(ValidationError):
+            StudentUpdate(folder_id=0)
+
 
 if __name__ == "__main__":
     unittest.main()

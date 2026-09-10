@@ -23,6 +23,7 @@ from routes.admin import router as admin_router
 from routes.pilot_feedback import router as pilot_feedback_router
 from routes.student_progress_reports import router as student_progress_reports_router
 from routes.notifications import router as notifications_router
+from routes.student_folders import router as student_folders_router
 from config import settings
 from sqlalchemy import text
 import logging
@@ -140,6 +141,7 @@ app.include_router(admin_router)
 app.include_router(pilot_feedback_router)
 app.include_router(student_progress_reports_router)
 app.include_router(notifications_router)
+app.include_router(student_folders_router)
 
 
 @app.get("/")

@@ -24,6 +24,7 @@ class StudentBase(BaseModel):
     school_name: str | None = None
     school_grade: str | None = Field(default=None, max_length=100)
     class_group: str | None = Field(default=None, max_length=50)
+    folder_id: int | None = Field(default=None, gt=0)
 
     guardian_name: str | None = None
     guardian_phone: str | None = None
@@ -70,6 +71,7 @@ class StudentUpdate(BaseModel):
     school_name: str | None = None
     school_grade: str | None = Field(default=None, max_length=100)
     class_group: str | None = Field(default=None, max_length=50)
+    folder_id: int | None = Field(default=None, gt=0)
 
     guardian_name: str | None = None
     guardian_phone: str | None = None

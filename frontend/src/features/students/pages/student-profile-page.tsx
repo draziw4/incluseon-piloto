@@ -158,36 +158,38 @@ export function StudentProfilePage() {
         </aside>
 
         <main className="xl:col-span-3">
-          {activeTab === "overview" && <StudentOverview student={student} />}
+          <div key={activeTab} className="motion-tab">
+            {activeTab === "overview" && <StudentOverview student={student} />}
 
-          {activeTab === "behavior" && (
-            <StudentReportsPanel
-              studentId={student.id.toString()}
-              canManageBehavior={canManageBehavior}
-            />
-          )}
+            {activeTab === "behavior" && (
+              <StudentReportsPanel
+                studentId={student.id.toString()}
+                canManageBehavior={canManageBehavior}
+              />
+            )}
 
-          {activeTab === "assessments" && (
-            <AssessmentsPanel studentId={student.id.toString()} />
-          )}
+            {activeTab === "assessments" && (
+              <AssessmentsPanel studentId={student.id.toString()} />
+            )}
 
-          {activeTab === "timeline" && (
-            <StudentTimelinePanel studentId={student.id.toString()} />
-          )}
+            {activeTab === "timeline" && (
+              <StudentTimelinePanel studentId={student.id.toString()} />
+            )}
 
-          {activeTab === "analytics" && (
-            <StudentAnalyticsPanel studentId={student.id.toString()} />
-          )}
+            {activeTab === "analytics" && (
+              <StudentAnalyticsPanel studentId={student.id.toString()} />
+            )}
 
-          {activeTab === "reports" && (
-            <AIReportsPanel studentId={student.id.toString()} />
-          )}
-          {activeTab === "goals" && (
-            <StudentGoalsPanel studentId={student.id.toString()} canManage={canManageGoals} />
-          )}
-          {activeTab === "team" && (
-            <StudentTeamPanel studentId={student.id.toString()} canManage={canManageTeam} />
-          )}
+            {activeTab === "reports" && (
+              <AIReportsPanel studentId={student.id.toString()} />
+            )}
+            {activeTab === "goals" && (
+              <StudentGoalsPanel studentId={student.id.toString()} canManage={canManageGoals} />
+            )}
+            {activeTab === "team" && (
+              <StudentTeamPanel studentId={student.id.toString()} canManage={canManageTeam} />
+            )}
+          </div>
         </main>
       </div>
 
@@ -217,7 +219,7 @@ function StudentProfileNavButton({
       type="button"
       onClick={onClick}
       className={[
-        "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition",
+        "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
         active
           ? "bg-blue-600 text-white shadow-sm"
           : "text-zinc-600 hover:bg-blue-50 hover:text-blue-700",

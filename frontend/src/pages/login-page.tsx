@@ -106,10 +106,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-100">
+    <div className="motion-page min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-sky-100">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        <section className="hidden flex-col justify-between bg-blue-950 p-10 text-white lg:flex">
-          <div>
+        <section className="motion-auth-visual hidden flex-col justify-between bg-blue-950 p-10 text-white lg:flex">
+          <div className="motion-auth-stagger">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500">
                 <Brain size={26} />
@@ -142,7 +142,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="motion-auth-stagger grid grid-cols-3 gap-4">
             <FeatureCard
               title="Acompanhamento"
               description="Observações ABC e manejo comportamental"
@@ -161,7 +161,7 @@ export function LoginPage() {
         </section>
 
         <section className="flex items-center justify-center px-6 py-10">
-          <div className="w-full max-w-md">
+          <div className="motion-auth-card w-full max-w-md">
             <div className="mb-10 text-center lg:hidden">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
                 <Brain size={28} />
@@ -193,7 +193,7 @@ export function LoginPage() {
               </div>
 
               {loginError && (
-                <div role="alert" className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div role="alert" className="motion-notice mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                   {loginError}
                 </div>
               )}
@@ -223,7 +223,7 @@ export function LoginPage() {
                     Email
                   </label>
 
-                  <div className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
+                  <div className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 transition-[border-color,box-shadow] duration-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
                     <Mail size={18} className="text-zinc-400" />
 
                     <input
@@ -247,7 +247,7 @@ export function LoginPage() {
                     Senha
                   </label>
 
-                  <div className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
+                  <div className="flex items-center gap-3 rounded-xl border border-blue-100 px-4 py-3 transition-[border-color,box-shadow] duration-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
                     <Lock size={18} className="text-zinc-400" />
 
                     <input
@@ -295,7 +295,7 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </button>
@@ -340,7 +340,7 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-blue-800 bg-blue-900/60 p-4">
+    <div className="interactive-card rounded-2xl border border-blue-800 bg-blue-900/60 p-4 hover:border-blue-700 hover:bg-blue-900/80">
       <p className="font-bold text-white">{title}</p>
 
       <p className="mt-1 text-sm leading-relaxed text-blue-200">

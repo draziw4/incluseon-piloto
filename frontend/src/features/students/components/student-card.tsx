@@ -13,7 +13,7 @@ type Props = {
 
 export function StudentCard({ student, canManage, onEdit, onDelete }: Props) {
   return (
-    <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md">
+    <article className="interactive-card rounded-2xl border border-blue-100 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md">
       <Link to={`/students/${student.id}`} className="block">
         <div className="mb-4 flex items-start justify-between">
           <div>

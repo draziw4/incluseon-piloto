@@ -50,7 +50,7 @@ export function NotificationBell() {
       >
         <Bell size={18} />
         {unreadCount > 0 ? (
-          <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="motion-notice absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
@@ -60,7 +60,7 @@ export function NotificationBell() {
         <section
           role="dialog"
           aria-label="Central de notificações"
-          className="fixed inset-x-3 top-17 z-50 max-h-[75vh] overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[420px]"
+          className="motion-popover fixed inset-x-3 top-17 z-50 max-h-[75vh] overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[420px]"
         >
           <div className="flex items-center justify-between border-b border-blue-100 px-4 py-3">
             <div>

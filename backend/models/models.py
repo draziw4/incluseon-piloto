@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import Mapped, mapped_column,relationship
-from sqlalchemy import String,Integer,Text,ForeignKey,Date,DateTime,Boolean
+from sqlalchemy import String,Integer,Text,ForeignKey,Date,DateTime,Boolean,UniqueConstraint
 from database import Base
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import date,datetime
@@ -271,6 +271,22 @@ class PilotFeedback(Base):
     created_by: Mapped["User | None"] = relationship()
     
 
+class StudentFolder(Base):
+    __tablename__ = "student_folders"
+    __table_args__ = (
+        UniqueConstraint("owner_id", "name", name="uq_student_folders_owner_name"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+
 
 
 class Student(Base):
@@ -339,6 +355,12 @@ class Student(Base):
     class_group: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True
+    )
+
+    folder_id: Mapped[int | None] = mapped_column(
+        ForeignKey("student_folders.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
     )
 
 

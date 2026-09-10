@@ -1,1 +1,263 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button:not(:disabled):active,
+a:active {
+  transform: scale(0.985);
+}
+
+:focus-visible {
+  outline: 2px solid rgb(37 99 235 / 0.8);
+  outline-offset: 3px;
+}
+
+.motion-page {
+  animation: ui-page-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-tab {
+  animation: ui-tab-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-auth-visual {
+  animation: ui-auth-visual-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-auth-card {
+  animation: ui-auth-card-in 500ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-auth-stagger > * {
+  animation: ui-rise-in 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-auth-stagger > :nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.motion-auth-stagger > :nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.motion-auth-stagger > :nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.motion-sidebar {
+  animation: ui-sidebar-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-overlay {
+  animation: ui-fade-in 180ms ease-out both;
+}
+
+.motion-dialog {
+  animation: ui-dialog-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-popover {
+  animation: ui-popover-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
+
+.motion-reveal {
+  animation: ui-reveal-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-notice {
+  animation: ui-notice-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.interactive-card {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+.interactive-card:hover {
+  transform: translateY(-2px);
+}
+
+.route-loader-dot {
+  animation: ui-loader-pulse 900ms ease-in-out infinite alternate;
+}
+
+.route-loader-dot:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.route-loader-dot:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes ui-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-tab-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ui-auth-visual-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ui-auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ui-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ui-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ui-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ui-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ui-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-loader-pulse {
+  from {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  button:not(:disabled):active,
+  a:active,
+  .interactive-card:hover {
+    transform: none;
+  }
+}

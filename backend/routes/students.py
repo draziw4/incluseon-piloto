@@ -28,6 +28,7 @@ from models.models import (
     StudentProfessional,
     UserRole,
     StudentProfessionalRole,
+    StudentFolder,
     AIReport
 )
 
@@ -54,6 +55,28 @@ router = APIRouter(
 )
 
 
+async def require_owned_folder(
+    db: AsyncSession,
+    current_user: User,
+    folder_id: int | None,
+) -> StudentFolder | None:
+    if folder_id is None:
+        return None
+
+    folder = await db.get(StudentFolder, folder_id)
+    if folder is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pasta não encontrada",
+        )
+    if current_user.role != UserRole.ADMIN and folder.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sem permissão para usar esta pasta",
+        )
+    return folder
+
+
 @router.post(
     "",
     response_model=StudentResponse,
@@ -72,6 +95,8 @@ async def create_student(
         Depends(require_tool(ToolAccess.STUDENT_MANAGEMENT))
     ]
 ):
+    await require_owned_folder(db, current_user, data.folder_id)
+
     student = Student(
         psychologist_id=current_user.id,
         age=calculate_age(data.birth_date),
@@ -245,6 +270,9 @@ async def update_student(
     update_data = data.model_dump(
         exclude_unset=True
     )
+
+    if "folder_id" in update_data:
+        await require_owned_folder(db, current_user, update_data["folder_id"])
 
     for field, value in update_data.items():
         setattr(

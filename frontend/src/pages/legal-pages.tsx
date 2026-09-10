@@ -25,8 +25,8 @@ export function TermsPage() {
 
 function LegalPage({ title, intro, sections }: { title: string; intro: string; sections: string[][] }) {
   return (
-    <div className="min-h-screen bg-slate-50 px-5 py-10 text-slate-800">
-      <main className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
+    <div className="motion-page min-h-screen bg-slate-50 px-5 py-10 text-slate-800">
+      <main className="motion-auth-card mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
         <Link to="/login" className="inline-flex items-center gap-3 text-blue-700">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white"><Brain size={20} /></span>
           <span className="font-bold">IncluseON</span>

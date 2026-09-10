@@ -79,39 +79,41 @@ export function StudentProgressReportsPanel({ studentId }: Props) {
 
       <div className="flex flex-wrap gap-2" aria-label="Filtros de relatórios">
         {filterOptions.map((item) => (
-          <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-full px-4 py-2 text-sm font-medium ${filter === item.value ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}>
+          <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${filter === item.value ? "bg-blue-600 text-white shadow-sm" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}>
             {item.label}
           </button>
         ))}
       </div>
 
-      {actionError ? <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{actionError}</div> : null}
-      {isLoading ? <div className="rounded-2xl border border-blue-100 bg-white p-6 text-sm text-zinc-500">Carregando relatórios...</div> : null}
-      {isError ? <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-600">Não foi possível carregar os relatórios.</div> : null}
+      <div key={filter} className="motion-tab space-y-4">
+        {actionError ? <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">{actionError}</div> : null}
+        {isLoading ? <div className="rounded-2xl border border-blue-100 bg-white p-6 text-sm text-zinc-500">Carregando relatórios...</div> : null}
+        {isError ? <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-600">Não foi possível carregar os relatórios.</div> : null}
 
-      {!isLoading && !isError && reports.length > 0 ? (
-        <div className="space-y-4">
-          {reports.map((report) => (
-            <StudentProgressReportCard
-              key={report.id}
-              report={report}
-              canChange={canChange(report)}
-              canReview={canReviewSupportReports && report.professional_type === "support"}
-              onEdit={() => { setEditingReport(report); setOpenModal(true) }}
-              onDelete={() => void handleDelete(report)}
-              onReview={() => setReviewingReport(report)}
-            />
-          ))}
-        </div>
-      ) : null}
+        {!isLoading && !isError && reports.length > 0 ? (
+          <div className="space-y-4">
+            {reports.map((report) => (
+              <StudentProgressReportCard
+                key={report.id}
+                report={report}
+                canChange={canChange(report)}
+                canReview={canReviewSupportReports && report.professional_type === "support"}
+                onEdit={() => { setEditingReport(report); setOpenModal(true) }}
+                onDelete={() => void handleDelete(report)}
+                onReview={() => setReviewingReport(report)}
+              />
+            ))}
+          </div>
+        ) : null}
 
-      {!isLoading && !isError && reports.length === 0 ? (
-        <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-sm">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><BookOpenText size={28} /></div>
-          <h3 className="mt-4 text-lg font-bold text-blue-950">Nenhum relatório neste filtro</h3>
-          <p className="mt-1 max-w-lg text-sm text-zinc-500">Os relatórios do PA ficam aguardando avaliação do AEE. Os relatórios do AEE permanecem separados e podem conter uma análise mais detalhada do estudante.</p>
-        </div>
-      ) : null}
+        {!isLoading && !isError && reports.length === 0 ? (
+          <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-sm">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><BookOpenText size={28} /></div>
+            <h3 className="mt-4 text-lg font-bold text-blue-950">Nenhum relatório neste filtro</h3>
+            <p className="mt-1 max-w-lg text-sm text-zinc-500">Os relatórios do PA ficam aguardando avaliação do AEE. Os relatórios do AEE permanecem separados e podem conter uma análise mais detalhada do estudante.</p>
+          </div>
+        ) : null}
+      </div>
 
       <StudentProgressReportModal
         studentId={studentId}

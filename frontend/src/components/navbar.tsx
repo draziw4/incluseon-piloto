@@ -28,7 +28,7 @@ export function Navbar({ sidebarOpen, onToggleSidebar }: NavbarProps) {
         >
           <Menu size={20} />
         </button>
-        <div>
+        <div key={pathname} className="motion-tab">
           <h2 className="text-lg font-bold text-blue-950">
             {getNavigationTitle(pathname)}
           </h2>

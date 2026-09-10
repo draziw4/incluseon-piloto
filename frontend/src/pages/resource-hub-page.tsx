@@ -90,7 +90,7 @@ export function ResourceHubPage({
               <Link
                 key={student.id}
                 to={`/students/${student.id}?tab=${tab}`}
-                className="group flex items-center justify-between rounded-2xl border border-blue-100 p-4 transition hover:border-blue-300 hover:bg-blue-50"
+                className="interactive-card group flex items-center justify-between rounded-2xl border border-blue-100 p-4 hover:border-blue-300 hover:bg-blue-50"
               >
                 <div className="min-w-0">
                   <h3 className="truncate font-semibold text-blue-950">{student.name}</h3>

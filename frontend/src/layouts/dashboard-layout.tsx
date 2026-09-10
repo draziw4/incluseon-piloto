@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import { Sidebar } from "../components/sidebar";
 import { Navbar } from "../components/navbar";
@@ -7,6 +7,7 @@ import { isPilotMode } from "../config/pilot";
 import { FeedbackLauncher } from "../features/pilot-feedback/components/feedback-launcher";
 
 export function DashboardLayout() {
+  const { pathname } = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = window.localStorage.getItem("incluseon:sidebar-open");
     return saved === null ? true : saved === "true";
@@ -25,7 +26,7 @@ export function DashboardLayout() {
           type="button"
           aria-label="Fechar menu lateral"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-slate-950/35 md:hidden"
+          className="motion-overlay fixed inset-0 z-30 bg-slate-950/35 md:hidden"
         />
       )}
 
@@ -39,7 +40,9 @@ export function DashboardLayout() {
         )}
 
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-6xl"><Outlet /></div>
+          <div key={pathname} className="motion-page mx-auto max-w-6xl">
+            <Outlet />
+          </div>
         </main>
       </div>
 
